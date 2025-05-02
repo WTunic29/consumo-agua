@@ -473,6 +473,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/regression@2.0.1/dist/regression.min.js"></script>
 
+    <script type="application/json" id="consumosData">
+        <%- JSON.stringify(consumos) %>
+    </script>
+
     <script>
         // Función para convertir string a número
         function parseConsumo(valor) {
@@ -521,8 +525,7 @@
             return proyeccion;
         }
 
-        // Verificar si hay datos disponibles
-        const consumosData = <%- JSON.stringify(consumos) %>;
+        const consumosData = JSON.parse(document.getElementById('consumosData').textContent);
         console.log('Datos disponibles:', consumosData);
 
         if (consumosData && consumosData.length > 0) {

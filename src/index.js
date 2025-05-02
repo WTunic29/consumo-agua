@@ -321,6 +321,11 @@ app.put('/auth/perfil', auth, async (req, res) => {
 // Proteger rutas de facturas con autenticación
 app.use('/facturas', auth);
 
+// Ruta para mostrar el formulario de registro
+app.get('/auth/registro', (req, res) => {
+    res.render('registro');
+});
+
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
