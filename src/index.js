@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const connectDB = require('./config/database');
+const facturasRoutes = require('./routes/facturas');
 const User = require('./models/User');
 const Stats = require('./models/Stats');
 const mongoose = require('mongoose');
@@ -338,3 +339,5 @@ mongoose.connect(process.env.MONGODB_URI, {
 app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${port}`);
 });
+
+app.use('/facturas', facturasRoutes);
