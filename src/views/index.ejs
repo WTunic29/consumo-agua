@@ -1150,332 +1150,139 @@
         }
 
         // Funciones de autenticación
-        async function login(email, password) {
-            try {
-                const response = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, password })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('userName', data.usuario.nombre);
-                    localStorage.setItem('userId', data.usuario.id);
-                    updateUI(true);
-                    $('#loginModal').modal('hide');
-                    showFacturas();
-                } else {
-                    mostrarMensaje(data.error || 'Error al iniciar sesión', true);
-                }
-            } catch (error) {
-                mostrarMensaje('Error al conectar con el servidor', true);
-            }
-        }
+        document.getElementById('registroForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                telefono: document.getElementById('telefono').value,
+                direccion: document.getElementById('direccion').value
+            };
 
-        async function register(userData) {
             try {
                 const response = await fetch('/auth/registro', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(userData)
+                    body: JSON.stringify(formData)
                 });
+
                 const data = await response.json();
+
                 if (response.ok) {
+                    // Guardar el token
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userName', data.usuario.nombre);
-                    localStorage.setItem('userId', data.usuario.id);
-                    updateUI(true);
-                    $('#registroModal').modal('hide');
-                    showFacturas();
+                    
+                    // Actualizar la UI
+                    document.getElementById('userSection').style.display = 'block';
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('userName').textContent = data.usuario.nombre;
+                    
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('registroModal'));
+                    modal.hide();
+                    
+                    // Limpiar el formulario
+                    e.target.reset();
+                    
+                    alert('Registro exitoso');
                 } else {
-                    mostrarMensaje(data.error || 'Error en el registro', true);
+                    alert(data.error || 'Error en el registro');
                 }
             } catch (error) {
-                mostrarMensaje('Error al conectar con el servidor', true);
+                console.error('Error:', error);
+                alert('Error en el registro');
             }
-        }
+        });
 
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Guardar el token
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.usuario.nombre);
+                    
+                    // Actualizar la UI
+                    document.getElementById('userSection').style.display = 'block';
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('userName').textContent = data.usuario.nombre;
+                    
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                    modal.hide();
+                    
+                    // Limpiar el formulario
+                    e.target.reset();
+                    
+                    alert('Inicio de sesión exitoso');
+                } else {
+                    alert(data.error || 'Error en el inicio de sesión');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error en el inicio de sesión');
+            }
+        });
+
+        // Función para cerrar sesión
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('userName');
-            localStorage.removeItem('userId');
-            updateUI(false);
+            document.getElementById('userSection').style.display = 'none';
+            document.getElementById('authSection').style.display = 'block';
+            document.getElementById('userName').textContent = '';
         }
 
-        // Funciones de UI
-        function updateUI(isLoggedIn) {
-            if (isLoggedIn) {
+        // Verificar si hay un usuario logueado al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            const userName = localStorage.getItem('userName');
+            
+            if (token && userName) {
                 document.getElementById('userSection').style.display = 'block';
                 document.getElementById('authSection').style.display = 'none';
-                document.getElementById('userName').textContent = localStorage.getItem('userName');
-            } else {
-                document.getElementById('userSection').style.display = 'none';
-                document.getElementById('authSection').style.display = 'block';
-                document.getElementById('facturasContainer').style.display = 'none';
-            }
-        }
-
-        // Variables globales
-        let currentPage = 1;
-        const itemsPerPage = 10;
-
-        // Función para cargar facturas con paginación y filtros
-        async function loadFacturas(page = 1, filters = {}) {
-            try {
-                const queryParams = new URLSearchParams({
-                    page,
-                    limit: itemsPerPage,
-                    ...filters
-                });
-
-                const response = await fetch(`/facturas?${queryParams}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    renderFacturas(data.facturas);
-                    renderPagination(data.totalPaginas, data.paginaActual);
-                    updateShowingItems(data.facturas.length, data.total);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al cargar facturas');
-            }
-        }
-
-        // Función para renderizar la paginación
-        function renderPagination(totalPages, currentPage) {
-            const pagination = document.getElementById('pagination');
-            pagination.innerHTML = '';
-
-            // Botón anterior
-            const prevButton = document.createElement('button');
-            prevButton.className = `btn btn-outline-primary ${currentPage === 1 ? 'disabled' : ''}`;
-            prevButton.innerHTML = '&laquo;';
-            prevButton.onclick = () => currentPage > 1 && loadFacturas(currentPage - 1);
-            pagination.appendChild(prevButton);
-
-            // Páginas
-            for (let i = 1; i <= totalPages; i++) {
-                const pageButton = document.createElement('button');
-                pageButton.className = `btn btn-outline-primary ${i === currentPage ? 'active' : ''}`;
-                pageButton.textContent = i;
-                pageButton.onclick = () => loadFacturas(i);
-                pagination.appendChild(pageButton);
-            }
-
-            // Botón siguiente
-            const nextButton = document.createElement('button');
-            nextButton.className = `btn btn-outline-primary ${currentPage === totalPages ? 'disabled' : ''}`;
-            nextButton.innerHTML = '&raquo;';
-            nextButton.onclick = () => currentPage < totalPages && loadFacturas(currentPage + 1);
-            pagination.appendChild(nextButton);
-        }
-
-        // Función para actualizar el contador de items
-        function updateShowingItems(showing, total) {
-            document.getElementById('itemsShowing').textContent = showing;
-            document.getElementById('totalItems').textContent = total;
-        }
-
-        // Event listeners para filtros
-        document.getElementById('searchFactura').addEventListener('input', debounce((e) => {
-            loadFacturas(1, { numeroFactura: e.target.value });
-        }, 300));
-
-        document.getElementById('filterEstado').addEventListener('change', (e) => {
-            loadFacturas(1, { estado: e.target.value });
-        });
-
-        // Función helper para debounce (evita múltiples llamadas)
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Función para cambiar tema
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            html.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        }
-
-        // Modificar la función showFacturas existente para usar la nueva función loadFacturas
-        async function showFacturas() {
-            document.getElementById('facturasContainer').style.display = 'block';
-            await loadFacturas(1);
-        }
-
-        // Modificar la función renderFacturas existente
-        function renderFacturas(facturas) {
-            const tbody = document.getElementById('facturasTableBody');
-            tbody.innerHTML = '';
-            facturas.forEach(factura => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${factura.numeroFactura}</td>
-                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                        <td>${factura.consumo?.consumoTotal || 0} m³</td>
-                        <td>$${factura.valores?.total || 0}</td>
-                        <td>
-                            <span class="badge ${getBadgeClass(factura.estado)}">
-                                ${factura.estado}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        // Función helper para clases de badges
-        function getBadgeClass(estado) {
-            switch (estado) {
-                case 'pagada':
-                    return 'bg-success';
-                case 'pendiente':
-                    return 'bg-warning';
-                case 'vencida':
-                    return 'bg-danger';
-                default:
-                    return 'bg-secondary';
-            }
-        }
-
-        // Cargar tema guardado al iniciar
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-bs-theme', savedTheme);
-            
-            // Si el usuario está autenticado, cargar facturas
-            if (localStorage.getItem('token')) {
-                updateUI(true);
-                showFacturas();
+                document.getElementById('userName').textContent = userName;
             }
         });
 
-        // Event Listener para el formulario de registro
+        // Función para verificar aceptación de políticas
+        function verificarPoliticas() {
+            const aceptaPoliticas = document.getElementById('aceptaPoliticas');
+            if (!aceptaPoliticas.checked) {
+                alert('Debe aceptar las políticas de uso y privacidad para continuar');
+                return false;
+            }
+            return true;
+        }
+
+        // Agregar verificación de políticas al formulario de registro
         document.getElementById('registroForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Validación del nombre y apellido
-            const nombre = document.getElementById('nombre').value.trim();
-            const apellido = document.getElementById('apellido').value.trim();
-            if (nombre.length < 2 || apellido.length < 2) {
-                alert('El nombre y apellido deben tener al menos 2 caracteres');
-                return;
+            if (!verificarPoliticas()) {
+                e.preventDefault();
             }
-            
-            // Validación del email
-            const email = document.getElementById('email').value.trim();
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                alert('Por favor, ingrese un email válido');
-                return;
-            }
-            
-            // Validación de la contraseña
-            const password = document.getElementById('password').value;
-            if (password.length < 6) {
-                alert('La contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-            
-            // Validación del teléfono (opcional)
-            const telefono = document.getElementById('telefono').value.trim();
-            if (telefono) {
-                const telefonoRegex = /^\+?[\d\s-]{8,}$/;
-                if (!telefonoRegex.test(telefono)) {
-                    alert('Por favor, ingrese un número de teléfono válido');
-                    return;
-                }
-            }
-            
-            // Validación de políticas
-            const aceptaPoliticas = document.getElementById('aceptaPoliticas').checked;
-            if (!aceptaPoliticas) {
-                alert('Debe aceptar las políticas de uso y privacidad');
-                return;
-            }
-            
-            // Si todas las validaciones pasan, enviar el formulario
-            const formData = {
-                nombre,
-                apellido,
-                email,
-                password,
-                telefono,
-                direccion: document.getElementById('direccion').value.trim()
-            };
-            
-            // Enviar datos al servidor
-            fetch('/auth/registro', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Registro exitoso');
-                    $('#registroModal').modal('hide');
-                    // Limpiar formulario
-                    this.reset();
-                } else {
-                    alert(data.message || 'Error en el registro');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error en el registro');
-            });
         });
-
-        // Función helper para mostrar mensajes
-        function showMessage(message, isError = false) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show`;
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            
-            // Insertar el mensaje al principio del contenedor principal
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-
-            // Remover el mensaje después de 5 segundos
-            setTimeout(() => {
-                alertDiv.remove();
-            }, 5000);
-        }
 
         // Funciones de donación y membresía
         function donar(monto) {
