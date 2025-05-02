@@ -1,9 +1,10 @@
-s # Sistema de Registro de Consumo de Agua
+# Sistema de Registro de Consumo de Agua
 
-Aplicación web para visualizar y analizar el consumo de agua en diferentes municipios (Bogotá, Soacha y Gachancipá).
+Aplicación web para visualizar y analizar el consumo de agua en diferentes municipios (Bogotá, Soacha y Gachancipá), con sistema de autenticación y gestión de facturas personales.
 
 ## Características
 
+### Visualización de Datos
 - 📊 Visualización de datos históricos de consumo
 - 📈 Gráficos interactivos de tendencias
 - 🗺️ Mapa interactivo de sectores
@@ -12,6 +13,25 @@ Aplicación web para visualizar y analizar el consumo de agua en diferentes muni
 - 📊 Análisis comparativo entre municipios
 - 📈 Proyecciones de consumo futuro
 - 📊 Cálculo de variaciones porcentuales
+
+### Sistema de Usuarios
+- 👤 Registro de usuarios
+- 🔐 Autenticación segura
+- ✅ Validación de políticas de uso
+- 👥 Perfiles de usuario personalizados
+
+### Gestión de Facturas
+- 📝 Registro manual de facturas
+- 📋 Visualización de facturas personales
+- ✏️ Edición de facturas
+- 🗑️ Eliminación de facturas
+- 🔍 Filtrado y búsqueda de facturas
+
+### Sostenibilidad y Donaciones
+- 💚 Sistema de donaciones
+- ⭐ Planes de membresía
+- 📢 Anuncios responsables
+- 💧 Métricas de sostenibilidad
 
 ## Tecnologías Utilizadas
 
@@ -22,6 +42,8 @@ Aplicación web para visualizar y analizar el consumo de agua en diferentes muni
 - Chart.js
 - Leaflet.js
 - Bootstrap 5
+- JWT (JSON Web Tokens)
+- bcrypt
 
 ## Requisitos Previos
 
@@ -46,6 +68,7 @@ npm install
 ```env
 MONGODB_URI=mongodb://localhost:27017/consumo_agua
 PORT=3000
+JWT_SECRET=tu_clave_secreta_aqui
 ```
 
 4. Iniciar la aplicación:
@@ -65,25 +88,65 @@ proyecto/
 ├── src/
 │   ├── config/
 │   │   └── database.js    # Configuración de MongoDB
+│   ├── middleware/
+│   │   └── auth.js        # Middleware de autenticación
 │   ├── models/
-│   │   └── Stats.js       # Modelo de datos
+│   │   ├── Stats.js       # Modelo de estadísticas
+│   │   ├── User.js        # Modelo de usuarios
+│   │   └── Factura.js     # Modelo de facturas
+│   ├── routes/
+│   │   ├── auth.js        # Rutas de autenticación
+│   │   ├── facturas.js    # Rutas de facturas
+│   │   └── politicas.js   # Rutas de políticas
 │   ├── views/
-│   │   └── index.ejs      # Vista principal
+│   │   ├── index.ejs      # Vista principal
+│   │   ├── politicas.ejs  # Políticas de uso
+│   │   └── registro.ejs   # Formulario de registro
 │   └── index.js           # Archivo principal
 ├── .env                   # Variables de entorno
 ├── .gitignore            # Archivos ignorados por git
 └── README.md             # Documentación
 ```
 
-## Uso
+## API Endpoints
 
-La aplicación muestra:
-- Promedios de consumo por municipio
-- Variaciones porcentuales mensuales
-- Gráfico de tendencias históricas
-- Mapa interactivo con ubicaciones
-- Proyecciones de consumo futuro
-- Tabla de datos históricos
+### Autenticación
+- POST `/auth/registro` - Registro de usuarios
+- POST `/auth/login` - Inicio de sesión
+- GET `/auth/perfil` - Obtener perfil de usuario
+
+### Facturas
+- GET `/facturas/:usuarioId` - Obtener facturas del usuario
+- POST `/facturas` - Crear nueva factura
+- PUT `/facturas/:id` - Actualizar factura
+- DELETE `/facturas/:id` - Eliminar factura
+
+### Políticas
+- GET `/politicas` - Ver políticas de uso y privacidad
+
+## Características de Seguridad
+
+- Autenticación mediante JWT
+- Contraseñas hasheadas con bcrypt
+- Validación de datos en frontend y backend
+- Protección de rutas mediante middleware
+- Aceptación obligatoria de políticas de uso
+
+## Planes de Membresía
+
+### Plan Básico ($5/mes)
+- Sin anuncios
+- Reportes básicos
+
+### Plan Pro ($10/mes)
+- Sin anuncios
+- Reportes avanzados
+- Predicciones personalizadas
+
+### Plan Empresarial ($25/mes)
+- Todo lo del Plan Pro
+- API access
+- Soporte prioritario
 
 ## Contribuir
 
