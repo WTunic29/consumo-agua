@@ -1149,9 +1149,112 @@
             alert(mensaje); // Puedes mejorar esto con una librería de notificaciones
         }
 
-        // Funciones de autenticación
+        // Función para cargar las facturas del usuario
+        async function cargarFacturas() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            
+            if (!token || !userId) {
+                console.error('No hay token o userId');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/facturas/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarFacturas(data.facturas);
+                } else {
+                    console.error('Error al cargar facturas');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Función para mostrar las facturas en la tabla
+        function mostrarFacturas(facturas) {
+            const tbody = document.getElementById('facturasTableBody');
+            if (!tbody) return;
+
+            tbody.innerHTML = facturas.map(factura => `
+                <tr>
+                    <td>${factura.numeroFactura}</td>
+                    <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                    <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
+                    <td>$${factura.valores.total}</td>
+                    <td><span class="badge bg-${factura.estado === 'pagada' ? 'success' : 'warning'}">${factura.estado}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Modificar la función de login para incluir el ID del usuario y cargar facturas
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Guardar datos del usuario
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.usuario.nombre);
+                    localStorage.setItem('userId', data.usuario.id);
+                    
+                    // Actualizar la UI
+                    document.getElementById('userSection').style.display = 'block';
+                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('userName').textContent = data.usuario.nombre;
+                    
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                    modal.hide();
+                    
+                    // Limpiar el formulario
+                    e.target.reset();
+                    
+                    // Cargar facturas del usuario
+                    cargarFacturas();
+                    
+                    alert('Inicio de sesión exitoso');
+                } else {
+                    alert(data.error || 'Error en el inicio de sesión');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error en el inicio de sesión');
+            }
+        });
+
+        // Modificar la función de registro para incluir el ID del usuario y cargar facturas
         document.getElementById('registroForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            if (!verificarPoliticas()) {
+                return;
+            }
             
             const formData = {
                 nombre: document.getElementById('nombre').value,
@@ -1174,9 +1277,10 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Guardar el token
+                    // Guardar datos del usuario
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userName', data.usuario.nombre);
+                    localStorage.setItem('userId', data.usuario.id);
                     
                     // Actualizar la UI
                     document.getElementById('userSection').style.display = 'block';
@@ -1190,6 +1294,9 @@
                     // Limpiar el formulario
                     e.target.reset();
                     
+                    // Mostrar el contenedor de facturas vacío
+                    document.getElementById('facturasContainer').style.display = 'block';
+                    
                     alert('Registro exitoso');
                 } else {
                     alert(data.error || 'Error en el registro');
@@ -1200,59 +1307,113 @@
             }
         });
 
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Función para mostrar el contenedor de facturas
+        function showFacturas() {
+            document.getElementById('facturasContainer').style.display = 'block';
+            cargarFacturas();
+        }
+
+        // Función para crear nueva factura
+        async function crearFactura(formData) {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
             
-            const formData = {
-                email: document.getElementById('loginEmail').value,
-                password: document.getElementById('loginPassword').value
-            };
+            if (!token || !userId) {
+                alert('Debe iniciar sesión para crear facturas');
+                return;
+            }
 
             try {
-                const response = await fetch('/auth/login', {
+                const response = await fetch('/facturas', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify({
+                        ...formData,
+                        usuarioId: userId
+                    })
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
-                    // Guardar el token
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('userName', data.usuario.nombre);
-                    
-                    // Actualizar la UI
-                    document.getElementById('userSection').style.display = 'block';
-                    document.getElementById('authSection').style.display = 'none';
-                    document.getElementById('userName').textContent = data.usuario.nombre;
-                    
-                    // Cerrar el modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                    modal.hide();
-                    
-                    // Limpiar el formulario
-                    e.target.reset();
-                    
-                    alert('Inicio de sesión exitoso');
+                    alert('Factura creada exitosamente');
+                    cargarFacturas();
                 } else {
-                    alert(data.error || 'Error en el inicio de sesión');
+                    const data = await response.json();
+                    alert(data.error || 'Error al crear la factura');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error en el inicio de sesión');
+                alert('Error al crear la factura');
             }
-        });
+        }
 
-        // Función para cerrar sesión
+        // Función para editar factura
+        async function editarFactura(facturaId) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`/facturas/${facturaId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const factura = await response.json();
+                    // Rellenar el formulario con los datos de la factura
+                    document.getElementById('numeroFactura').value = factura.numeroFactura;
+                    document.getElementById('fechaEmision').value = factura.fechaEmision.split('T')[0];
+                    document.getElementById('lecturaAnterior').value = factura.consumo.lecturaAnterior;
+                    document.getElementById('lecturaActual').value = factura.consumo.lecturaActual;
+                    
+                    // Mostrar el modal
+                    const modal = new bootstrap.Modal(document.getElementById('facturaModal'));
+                    modal.show();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Función para eliminar factura
+        async function eliminarFactura(facturaId) {
+            if (!confirm('¿Está seguro de eliminar esta factura?')) return;
+
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            try {
+                const response = await fetch(`/facturas/${facturaId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Factura eliminada exitosamente');
+                    cargarFacturas();
+                } else {
+                    alert('Error al eliminar la factura');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al eliminar la factura');
+            }
+        }
+
+        // Modificar la función de logout para limpiar todo
         function logout() {
             localStorage.removeItem('token');
             localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
             document.getElementById('userSection').style.display = 'none';
             document.getElementById('authSection').style.display = 'block';
             document.getElementById('userName').textContent = '';
+            document.getElementById('facturasContainer').style.display = 'none';
         }
 
         // Verificar si hay un usuario logueado al cargar la página
