@@ -215,16 +215,24 @@
     </style>
 </head>
 <body>
-    <!-- Navbar con botones de autenticación -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
             <a class="navbar-brand" href="/">Sistema de Registro de Consumo de Agua</a>
-            <div class="d-flex">
-                <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
-                    Iniciar Sesión
-                </button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registroModal">
-                    Registrarse
+            <div class="d-flex align-items-center">
+                <div id="userSection" style="display: none;">
+                    <span id="userName" class="me-3"></span>
+                    <button class="btn btn-outline-primary me-2" onclick="showFacturas()">Mis Facturas</button>
+                    <button class="btn btn-outline-danger" onclick="logout()">Cerrar Sesión</button>
+                </div>
+                <div id="authSection">
+                    <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar Sesión</button>
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#registroModal">Registrarse</button>
+                </div>
+                <!-- Botón de tema oscuro movido aquí -->
+                <button class="theme-toggle" onclick="toggleTheme()">
+                    <i class="bi bi-moon-fill"></i>
+                    <i class="bi bi-sun-fill"></i>
                 </button>
             </div>
         </div>
@@ -368,6 +376,19 @@
                     <i class="bi bi-table text-primary"></i>
                     Historial de Consumos
                 </h5>
+                <div class="row mb-3">
+                    <div class="col">
+                        <input type="text" class="form-control" id="searchFactura" placeholder="Buscar factura...">
+                    </div>
+                    <div class="col">
+                        <select class="form-select" id="filterEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagada">Pagada</option>
+                            <option value="vencida">Vencida</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
@@ -398,6 +419,133 @@
                 </div>
             </div>
         </div>
+
+        <!-- Sección de Sostenibilidad -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-heart-fill text-danger"></i>
+                    Apoya Nuestro Proyecto
+                </h5>
+                
+                <!-- Tabs de Sostenibilidad -->
+                <ul class="nav nav-tabs mb-3" id="sostenibilidadTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="donaciones-tab" data-bs-toggle="tab" data-bs-target="#donaciones" type="button" role="tab">
+                            <i class="bi bi-gift"></i> Donaciones
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="membresia-tab" data-bs-toggle="tab" data-bs-target="#membresia" type="button" role="tab">
+                            <i class="bi bi-star"></i> Membresía Premium
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="anuncios-tab" data-bs-toggle="tab" data-bs-target="#anuncios" type="button" role="tab">
+                            <i class="bi bi-megaphone"></i> Anuncios Responsables
+                        </button>
+                    </li>
+                </ul>
+                
+                <!-- Contenido de los Tabs -->
+                <div class="tab-content" id="sostenibilidadContent">
+                    <!-- Tab Donaciones -->
+                    <div class="tab-pane fade show active" id="donaciones" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-primary mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Donación Única</h6>
+                                        <p class="card-text">Apoya nuestro proyecto con una donación única del monto que desees.</p>
+                                        <div class="d-flex gap-2 mb-3">
+                                            <button class="btn btn-outline-primary" onclick="donar(5)">$5</button>
+                                            <button class="btn btn-outline-primary" onclick="donar(10)">$10</button>
+                                            <button class="btn btn-outline-primary" onclick="donar(20)">$20</button>
+                                            <button class="btn btn-outline-primary" onclick="donar('custom')">Otro</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-success mb-3">
+                                    <div class="card-body">
+                                        <h6 class="card-title">Donación Mensual</h6>
+                                        <p class="card-text">Conviértete en patrocinador mensual y recibe beneficios exclusivos.</p>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-outline-success" onclick="donarMensual(5)">$5/mes</button>
+                                            <button class="btn btn-outline-success" onclick="donarMensual(10)">$10/mes</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Membresía Premium -->
+                    <div class="tab-pane fade" id="membresia" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Plan Básico</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">$5/mes</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-check-circle text-success"></i> Sin anuncios</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Reportes básicos</li>
+                                        </ul>
+                                        <button class="btn btn-primary" onclick="seleccionarPlan('basico')">Seleccionar</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100 border-primary">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Plan Pro</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">$10/mes</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-check-circle text-success"></i> Sin anuncios</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Reportes avanzados</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Predicciones personalizadas</li>
+                                        </ul>
+                                        <button class="btn btn-primary" onclick="seleccionarPlan('pro')">Seleccionar</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Plan Empresarial</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">$25/mes</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-check-circle text-success"></i> Todo lo del Plan Pro</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> API access</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Soporte prioritario</li>
+                                        </ul>
+                                        <button class="btn btn-primary" onclick="seleccionarPlan('empresarial')">Seleccionar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Anuncios -->
+                    <div class="tab-pane fade" id="anuncios" role="tabpanel">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Sobre Nuestros Anuncios</h6>
+                            <p>Nos comprometemos a mostrar solo anuncios:</p>
+                            <ul>
+                                <li>Relacionados con sostenibilidad y medio ambiente</li>
+                                <li>De empresas comprometidas con la reducción del consumo de agua</li>
+                                <li>De productos y servicios eco-amigables</li>
+                            </ul>
+                        </div>
+                        <div id="anunciosContainer" class="row">
+                            <!-- Los anuncios se cargarán dinámicamente aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal de Login -->
@@ -411,11 +559,11 @@
                 <div class="modal-body">
                     <form id="loginForm">
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
+                            <label for="loginEmail" class="form-label">Email</label>
                             <input type="email" class="form-control" id="loginEmail" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Contraseña</label>
+                            <label for="loginPassword" class="form-label">Contraseña</label>
                             <input type="password" class="form-control" id="loginPassword" required>
                         </div>
                         <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
@@ -430,39 +578,157 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Registro de Usuario</h5>
+                    <h5 class="modal-title">Registro</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="registroForm">
                         <div class="mb-3">
-                            <label class="form-label">Nombre</label>
+                            <label for="nombre" class="form-label">Nombre</label>
                             <input type="text" class="form-control" id="nombre" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Apellido</label>
+                            <label for="apellido" class="form-label">Apellido</label>
                             <input type="text" class="form-control" id="apellido" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Email</label>
+                            <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Contraseña</label>
+                            <label for="password" class="form-label">Contraseña</label>
                             <input type="password" class="form-control" id="password" required>
+                            <div class="form-text">La contraseña debe tener al menos 6 caracteres.</div>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
+                            <label for="telefono" class="form-label">Teléfono</label>
                             <input type="tel" class="form-control" id="telefono">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Dirección</label>
-                            <input type="text" class="form-control mb-2" id="calle" placeholder="Calle">
-                            <input type="text" class="form-control mb-2" id="ciudad" placeholder="Ciudad">
-                            <input type="text" class="form-control" id="codigoPostal" placeholder="Código Postal">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="direccion">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="aceptaPoliticas" required>
+                            <label class="form-check-label" for="aceptaPoliticas">
+                                He leído y acepto las <a href="/politicas" target="_blank">políticas de uso y privacidad</a>
+                            </label>
                         </div>
                         <button type="submit" class="btn btn-primary">Registrarse</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor para las facturas del usuario -->
+    <div id="facturasContainer" class="container mt-4" style="display: none;">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="card-title mb-0">Mis Facturas</h5>
+                            </div>
+                            <div class="col">
+                                <input type="text" class="form-control" id="searchFactura" placeholder="Buscar factura...">
+                            </div>
+                            <div class="col">
+                                <select class="form-select" id="filterEstado">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="pagada">Pagada</option>
+                                    <option value="vencida">Vencida</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary" onclick="showNuevaFacturaModal()">Nueva Factura</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="facturasTable">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Fecha</th>
+                                        <th>Consumo</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="facturasTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                Mostrando <span id="itemsShowing">0</span> de <span id="totalItems">0</span> facturas
+            </div>
+            <div class="btn-group" id="pagination">
+                <!-- Los botones de paginación se generarán dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para nueva factura/editar factura -->
+    <div class="modal fade" id="facturaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="facturaModalTitle">Nueva Factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="facturaForm">
+                        <div class="mb-3">
+                            <label class="form-label">Número de Factura</label>
+                            <input type="text" class="form-control" id="numeroFactura" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de Emisión</label>
+                            <input type="date" class="form-control" id="fechaEmision" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lectura Anterior</label>
+                            <input type="number" class="form-control" id="lecturaAnterior" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lectura Actual</label>
+                            <input type="number" class="form-control" id="lecturaActual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Imagen de la Factura</label>
+                            <input type="file" class="form-control" id="imagenFactura" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Donación Personalizada -->
+    <div class="modal fade" id="donacionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Donación Personalizada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="montoPersonalizado" class="form-label">Monto a donar ($)</label>
+                        <input type="number" class="form-control" id="montoPersonalizado" min="1" step="1">
+                    </div>
+                    <button class="btn btn-primary" onclick="procesarDonacionPersonalizada()">Donar</button>
                 </div>
             </div>
         </div>
@@ -883,71 +1149,400 @@
             alert(mensaje); // Puedes mejorar esto con una librería de notificaciones
         }
 
-        // Manejar registro
-        document.getElementById('registroForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            try {
-                const response = await fetch('/auth/registro', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        nombre: document.getElementById('nombre').value,
-                        apellido: document.getElementById('apellido').value,
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value,
-                        telefono: document.getElementById('telefono').value,
-                        direccion: {
-                            calle: document.getElementById('calle').value,
-                            ciudad: document.getElementById('ciudad').value,
-                            codigoPostal: document.getElementById('codigoPostal').value
-                        }
-                    })
-                });
-
-                const data = await response.json();
-                if (response.ok) {
-                    mostrarMensaje('Registro exitoso');
-                    bootstrap.Modal.getInstance(document.getElementById('registroModal')).hide();
-                    // Aquí puedes guardar el token y redirigir si es necesario
-                    localStorage.setItem('token', data.token);
-                } else {
-                    mostrarMensaje(data.error || 'Error en el registro', true);
-                }
-            } catch (error) {
-                mostrarMensaje('Error al conectar con el servidor', true);
-            }
-        });
-
-        // Manejar login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Funciones de autenticación
+        async function login(email, password) {
             try {
                 const response = await fetch('/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        email: document.getElementById('loginEmail').value,
-                        password: document.getElementById('loginPassword').value
-                    })
+                    body: JSON.stringify({ email, password })
                 });
-
                 const data = await response.json();
                 if (response.ok) {
-                    mostrarMensaje('Inicio de sesión exitoso');
-                    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
-                    // Aquí puedes guardar el token y redirigir si es necesario
                     localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.usuario.nombre);
+                    localStorage.setItem('userId', data.usuario.id);
+                    updateUI(true);
+                    $('#loginModal').modal('hide');
+                    showFacturas();
                 } else {
-                    mostrarMensaje(data.error || 'Error en el inicio de sesión', true);
+                    mostrarMensaje(data.error || 'Error al iniciar sesión', true);
                 }
             } catch (error) {
                 mostrarMensaje('Error al conectar con el servidor', true);
             }
+        }
+
+        async function register(userData) {
+            try {
+                const response = await fetch('/auth/registro', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userName', data.usuario.nombre);
+                    localStorage.setItem('userId', data.usuario.id);
+                    updateUI(true);
+                    $('#registroModal').modal('hide');
+                    showFacturas();
+                } else {
+                    mostrarMensaje(data.error || 'Error en el registro', true);
+                }
+            } catch (error) {
+                mostrarMensaje('Error al conectar con el servidor', true);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            updateUI(false);
+        }
+
+        // Funciones de UI
+        function updateUI(isLoggedIn) {
+            if (isLoggedIn) {
+                document.getElementById('userSection').style.display = 'block';
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userName').textContent = localStorage.getItem('userName');
+            } else {
+                document.getElementById('userSection').style.display = 'none';
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('facturasContainer').style.display = 'none';
+            }
+        }
+
+        // Variables globales
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        // Función para cargar facturas con paginación y filtros
+        async function loadFacturas(page = 1, filters = {}) {
+            try {
+                const queryParams = new URLSearchParams({
+                    page,
+                    limit: itemsPerPage,
+                    ...filters
+                });
+
+                const response = await fetch(`/facturas?${queryParams}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    renderFacturas(data.facturas);
+                    renderPagination(data.totalPaginas, data.paginaActual);
+                    updateShowingItems(data.facturas.length, data.total);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al cargar facturas');
+            }
+        }
+
+        // Función para renderizar la paginación
+        function renderPagination(totalPages, currentPage) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            // Botón anterior
+            const prevButton = document.createElement('button');
+            prevButton.className = `btn btn-outline-primary ${currentPage === 1 ? 'disabled' : ''}`;
+            prevButton.innerHTML = '&laquo;';
+            prevButton.onclick = () => currentPage > 1 && loadFacturas(currentPage - 1);
+            pagination.appendChild(prevButton);
+
+            // Páginas
+            for (let i = 1; i <= totalPages; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `btn btn-outline-primary ${i === currentPage ? 'active' : ''}`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => loadFacturas(i);
+                pagination.appendChild(pageButton);
+            }
+
+            // Botón siguiente
+            const nextButton = document.createElement('button');
+            nextButton.className = `btn btn-outline-primary ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextButton.innerHTML = '&raquo;';
+            nextButton.onclick = () => currentPage < totalPages && loadFacturas(currentPage + 1);
+            pagination.appendChild(nextButton);
+        }
+
+        // Función para actualizar el contador de items
+        function updateShowingItems(showing, total) {
+            document.getElementById('itemsShowing').textContent = showing;
+            document.getElementById('totalItems').textContent = total;
+        }
+
+        // Event listeners para filtros
+        document.getElementById('searchFactura').addEventListener('input', debounce((e) => {
+            loadFacturas(1, { numeroFactura: e.target.value });
+        }, 300));
+
+        document.getElementById('filterEstado').addEventListener('change', (e) => {
+            loadFacturas(1, { estado: e.target.value });
         });
+
+        // Función helper para debounce (evita múltiples llamadas)
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Función para cambiar tema
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // Modificar la función showFacturas existente para usar la nueva función loadFacturas
+        async function showFacturas() {
+            document.getElementById('facturasContainer').style.display = 'block';
+            await loadFacturas(1);
+        }
+
+        // Modificar la función renderFacturas existente
+        function renderFacturas(facturas) {
+            const tbody = document.getElementById('facturasTableBody');
+            tbody.innerHTML = '';
+            facturas.forEach(factura => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${factura.numeroFactura}</td>
+                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                        <td>${factura.consumo?.consumoTotal || 0} m³</td>
+                        <td>$${factura.valores?.total || 0}</td>
+                        <td>
+                            <span class="badge ${getBadgeClass(factura.estado)}">
+                                ${factura.estado}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Función helper para clases de badges
+        function getBadgeClass(estado) {
+            switch (estado) {
+                case 'pagada':
+                    return 'bg-success';
+                case 'pendiente':
+                    return 'bg-warning';
+                case 'vencida':
+                    return 'bg-danger';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        // Cargar tema guardado al iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+            
+            // Si el usuario está autenticado, cargar facturas
+            if (localStorage.getItem('token')) {
+                updateUI(true);
+                showFacturas();
+            }
+        });
+
+        // Event Listener para el formulario de registro
+        document.getElementById('registroForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validación del nombre y apellido
+            const nombre = document.getElementById('nombre').value.trim();
+            const apellido = document.getElementById('apellido').value.trim();
+            if (nombre.length < 2 || apellido.length < 2) {
+                alert('El nombre y apellido deben tener al menos 2 caracteres');
+                return;
+            }
+            
+            // Validación del email
+            const email = document.getElementById('email').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Por favor, ingrese un email válido');
+                return;
+            }
+            
+            // Validación de la contraseña
+            const password = document.getElementById('password').value;
+            if (password.length < 6) {
+                alert('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+            
+            // Validación del teléfono (opcional)
+            const telefono = document.getElementById('telefono').value.trim();
+            if (telefono) {
+                const telefonoRegex = /^\+?[\d\s-]{8,}$/;
+                if (!telefonoRegex.test(telefono)) {
+                    alert('Por favor, ingrese un número de teléfono válido');
+                    return;
+                }
+            }
+            
+            // Validación de políticas
+            const aceptaPoliticas = document.getElementById('aceptaPoliticas').checked;
+            if (!aceptaPoliticas) {
+                alert('Debe aceptar las políticas de uso y privacidad');
+                return;
+            }
+            
+            // Si todas las validaciones pasan, enviar el formulario
+            const formData = {
+                nombre,
+                apellido,
+                email,
+                password,
+                telefono,
+                direccion: document.getElementById('direccion').value.trim()
+            };
+            
+            // Enviar datos al servidor
+            fetch('/auth/registro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Registro exitoso');
+                    $('#registroModal').modal('hide');
+                    // Limpiar formulario
+                    this.reset();
+                } else {
+                    alert(data.message || 'Error en el registro');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error en el registro');
+            });
+        });
+
+        // Función helper para mostrar mensajes
+        function showMessage(message, isError = false) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${isError ? 'danger' : 'success'} alert-dismissible fade show`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Insertar el mensaje al principio del contenedor principal
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+
+            // Remover el mensaje después de 5 segundos
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Funciones de donación y membresía
+        function donar(monto) {
+            if (monto === 'custom') {
+                $('#donacionModal').modal('show');
+            } else {
+                procesarDonacion(monto);
+            }
+        }
+
+        function donarMensual(monto) {
+            procesarDonacion(monto, true);
+        }
+
+        function procesarDonacionPersonalizada() {
+            const monto = document.getElementById('montoPersonalizado').value;
+            if (monto && monto > 0) {
+                procesarDonacion(parseFloat(monto));
+                $('#donacionModal').modal('hide');
+            } else {
+                alert('Por favor ingrese un monto válido');
+            }
+        }
+
+        function procesarDonacion(monto, mensual = false) {
+            // Aquí implementarías la integración con tu sistema de pagos
+            // Por ejemplo, Stripe, PayPal, etc.
+            alert(`Procesando donación de $${monto} ${mensual ? 'mensual' : 'única'}`);
+        }
+
+        function seleccionarPlan(plan) {
+            // Aquí implementarías la lógica de suscripción
+            alert(`Has seleccionado el plan ${plan}`);
+        }
+
+        // Cargar anuncios responsables
+        function cargarAnuncios() {
+            const anunciosContainer = document.getElementById('anunciosContainer');
+            // Aquí implementarías la carga de anuncios desde tu sistema
+            // Este es solo un ejemplo
+            const anunciosEjemplo = [
+                {
+                    titulo: 'Productos Eco-friendly',
+                    descripcion: 'Descubre nuestra línea de productos para el ahorro de agua',
+                    imagen: 'path/to/image1.jpg'
+                },
+                {
+                    titulo: 'Sistemas de Riego Eficiente',
+                    descripcion: 'Tecnología de última generación para el ahorro de agua',
+                    imagen: 'path/to/image2.jpg'
+                }
+            ];
+
+            anunciosContainer.innerHTML = anunciosEjemplo.map(anuncio => `
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${anuncio.titulo}</h5>
+                            <p class="card-text">${anuncio.descripcion}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Cargar anuncios cuando se muestre la pestaña
+        document.getElementById('anuncios-tab').addEventListener('shown.bs.tab', cargarAnuncios);
     </script>
 </body>
 </html>
