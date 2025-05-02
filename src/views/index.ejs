@@ -215,17 +215,18 @@
     </style>
 </head>
 <body>
-    <!-- Navbar con botón de modo oscuro -->
-    <nav class="navbar navbar-expand-lg navbar-light mb-4">
+    <!-- Navbar con botones de autenticación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <span class="navbar-brand">
-                <i class="bi bi-droplet-fill text-primary"></i>
-                <%= title %>
-            </span>
-            <button class="theme-toggle" id="themeToggle" title="Cambiar modo">
-                <i class="bi bi-moon-fill"></i>
-                <i class="bi bi-sun-fill"></i>
-            </button>
+            <a class="navbar-brand" href="/">Sistema de Registro de Consumo de Agua</a>
+            <div class="d-flex">
+                <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#loginModal">
+                    Iniciar Sesión
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registroModal">
+                    Registrarse
+                </button>
+            </div>
         </div>
     </nav>
 
@@ -394,6 +395,74 @@
                             <% } %>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Login -->
+    <div class="modal fade" id="loginModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Iniciar Sesión</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="loginEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Registro -->
+    <div class="modal fade" id="registroModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registro de Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="registroForm">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="apellido" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control mb-2" id="calle" placeholder="Calle">
+                            <input type="text" class="form-control mb-2" id="ciudad" placeholder="Ciudad">
+                            <input type="text" class="form-control" id="codigoPostal" placeholder="Código Postal">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Registrarse</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -805,6 +874,77 @@
 
         // Inicializar tema antes de crear los gráficos
         initTheme();
+
+        // Función para mostrar mensajes
+        function mostrarMensaje(mensaje, esError = false) {
+            alert(mensaje); // Puedes mejorar esto con una librería de notificaciones
+        }
+
+        // Manejar registro
+        document.getElementById('registroForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch('/auth/registro', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: document.getElementById('nombre').value,
+                        apellido: document.getElementById('apellido').value,
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
+                        telefono: document.getElementById('telefono').value,
+                        direccion: {
+                            calle: document.getElementById('calle').value,
+                            ciudad: document.getElementById('ciudad').value,
+                            codigoPostal: document.getElementById('codigoPostal').value
+                        }
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    mostrarMensaje('Registro exitoso');
+                    bootstrap.Modal.getInstance(document.getElementById('registroModal')).hide();
+                    // Aquí puedes guardar el token y redirigir si es necesario
+                    localStorage.setItem('token', data.token);
+                } else {
+                    mostrarMensaje(data.error || 'Error en el registro', true);
+                }
+            } catch (error) {
+                mostrarMensaje('Error al conectar con el servidor', true);
+            }
+        });
+
+        // Manejar login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const response = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: document.getElementById('loginEmail').value,
+                        password: document.getElementById('loginPassword').value
+                    })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    mostrarMensaje('Inicio de sesión exitoso');
+                    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+                    // Aquí puedes guardar el token y redirigir si es necesario
+                    localStorage.setItem('token', data.token);
+                } else {
+                    mostrarMensaje(data.error || 'Error en el inicio de sesión', true);
+                }
+            } catch (error) {
+                mostrarMensaje('Error al conectar con el servidor', true);
+            }
+        });
     </script>
 </body>
 </html>
