@@ -26,12 +26,14 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas de autenticación
 app.use('/auth', authRoutes);
+// Rutas de facturas
+app.use('/facturas', facturasRoutes);
 
 // Rutas
 app.get('/', async (req, res) => {
     try {
         const consumos = await Stats.find({}).sort({ Mes: 1 }).lean();
-        console.log('Datos recuperados:', consumos); // Log para depuración
+        console.log('Datos recuperados:', consumos);
 
         if (!consumos || consumos.length === 0) {
             console.log('No se encontraron datos de consumo');
@@ -102,16 +104,6 @@ app.post('/usuarios', async (req, res) => {
     }
 });
 
-// Función para calcular métricas de sostenibilidad
-const calcularMetricasSostenibilidad = (consumoActual, consumoAnterior, poblacion = 1000) => {
-    return {
-        eficiencia_hidrica: consumoAnterior ? (1 - (consumoActual / consumoAnterior)) * 100 : 0,
-        consumo_per_capita: consumoActual / poblacion,
-        ahorro_mensual: consumoAnterior ? ((consumoAnterior - consumoActual) / consumoAnterior) * 100 : 0,
-        huella_hidrica: consumoActual * 0.5 // Factor simplificado de impacto ambiental
-    };
-};
-
 // Ruta para obtener análisis de sostenibilidad
 app.get('/api/sostenibilidad', async (req, res) => {
     try {
@@ -159,6 +151,16 @@ app.get('/api/sostenibilidad', async (req, res) => {
         res.status(500).json({ error: 'Error al procesar datos de sostenibilidad' });
     }
 });
+
+// Función para calcular métricas de sostenibilidad
+const calcularMetricasSostenibilidad = (consumoActual, consumoAnterior, poblacion = 1000) => {
+    return {
+        eficiencia_hidrica: consumoAnterior ? (1 - (consumoActual / consumoAnterior)) * 100 : 0,
+        consumo_per_capita: consumoActual / poblacion,
+        ahorro_mensual: consumoAnterior ? ((consumoAnterior - consumoActual) / consumoAnterior) * 100 : 0,
+        huella_hidrica: consumoActual * 0.5
+    };
+};
 
 // Rutas para facturas
 app.post('/facturas', async (req, res) => {
@@ -340,4 +342,4 @@ app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${port}`);
 });
 
-app.use('/facturas', facturasRoutes);
+module.exports = app;
