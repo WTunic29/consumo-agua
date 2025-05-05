@@ -216,7 +216,7 @@
 </head>
 <body>
     <!-- Barra de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg" style="background-color: var(--card-background);">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Sistema de Consumo de Agua</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -228,10 +228,7 @@
                         <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/facturas">Mis Facturas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/historial">Historial de Consumo</a>
+                        <a class="nav-link" href="#facturasContainer">Mis Facturas</a>
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">
@@ -373,6 +370,53 @@
             </div>
         </div>
 
+        <!-- Tabla de Historial de Consumo -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Historial de Consumo</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Consumo (m³)</th>
+                                <th>Variación</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaHistorial">
+                            <% if (consumos && consumos.length > 0) { %>
+                                <% consumos.forEach(function(c, idx) { %>
+                                    <tr>
+                                        <td><%= c.Mes %></td>
+                                        <td><%= c["Consumo Bogotá (m3-mes)"] %></td>
+                                        <td>
+                                            <% if (idx > 0) { %>
+                                                <%= (((parseFloat(c["Consumo Bogotá (m3-mes)"]) - parseFloat(consumos[idx-1]["Consumo Bogotá (m3-mes)"])) / parseFloat(consumos[idx-1]["Consumo Bogotá (m3-mes)"])) * 100).toFixed(2) %>%
+                                            <% } else { %>
+                                                -
+                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <% if (parseFloat(c["Consumo Bogotá (m3-mes)"]) > 20) { %>
+                                                <span class="badge bg-danger">Alto</span>
+                                            <% } else { %>
+                                                <span class="badge bg-success">Normal</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr><td colspan="4">No hay datos de consumo</td></tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- Tabla de Facturas -->
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -402,30 +446,6 @@
                         </thead>
                         <tbody id="tablaFacturas">
                             <!-- Las facturas se cargarán aquí -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tabla de Historial de Consumo -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Historial de Consumo</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Mes</th>
-                                <th>Consumo (m³)</th>
-                                <th>Variación</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaHistorial">
-                            <!-- El historial se cargará aquí -->
                         </tbody>
                     </table>
                 </div>
