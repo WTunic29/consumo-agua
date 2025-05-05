@@ -107,4 +107,14 @@ router.get('/perfil', auth, async (req, res) => {
     }
 });
 
+// Ruta para mostrar el formulario de login
+router.get('/login', (req, res) => {
+    res.render('login', { title: 'Iniciar Sesión' });
+});
+
+// Ruta para mostrar el formulario de registro
+router.get('/registro', (req, res) => {
+    res.render('registro', { title: 'Registro de Usuario' });
+});
+
 module.exports = router; 
