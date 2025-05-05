@@ -231,7 +231,7 @@
                         <a class="nav-link" href="#facturasContainer">Mis Facturas</a>
                     </li>
                 </ul>
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center" id="userSession" style="display: none;">
                     <span class="me-3">Bienvenido, <span id="userName"></span></span>
                     <button class="btn btn-outline-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
                 </div>
@@ -1269,7 +1269,7 @@
                     localStorage.setItem('userId', data.usuario.id);
                     
                     // Actualizar la UI
-                    document.getElementById('userSection').style.display = 'block';
+                    document.getElementById('userSession').style.display = 'flex';
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
                     
@@ -1328,7 +1328,7 @@
                     localStorage.setItem('userId', data.usuario.id);
                     
                     // Actualizar la UI
-                    document.getElementById('userSection').style.display = 'block';
+                    document.getElementById('userSession').style.display = 'flex';
                     document.getElementById('authSection').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
                     
@@ -1451,14 +1451,13 @@
         }
 
         // Modificar la función de logout para limpiar todo
-        function logout() {
+        function cerrarSesion() {
             localStorage.removeItem('token');
-            localStorage.removeItem('userName');
             localStorage.removeItem('userId');
-            document.getElementById('userSection').style.display = 'none';
-            document.getElementById('authSection').style.display = 'block';
-            document.getElementById('userName').textContent = '';
-            document.getElementById('facturasContainer').style.display = 'none';
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('rememberMe');
+            window.location.href = '/login';
         }
 
         // Verificar si hay un usuario logueado al cargar la página
@@ -1467,7 +1466,7 @@
             const userName = localStorage.getItem('userName');
             
             if (token && userName) {
-                document.getElementById('userSection').style.display = 'block';
+                document.getElementById('userSession').style.display = 'flex';
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('userName').textContent = userName;
             }
@@ -1557,120 +1556,12 @@
         // Cargar anuncios cuando se muestre la pestaña
         document.getElementById('anuncios-tab').addEventListener('shown.bs.tab', cargarAnuncios);
 
-        // Función para cerrar sesión
-        function cerrarSesion() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('rememberMe');
-            window.location.href = '/login';
-        }
-
-        // Función para cargar facturas
-        async function cargarFacturas() {
+        // Redirección automática si no hay token
+        document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-            
-            if (!token || !userId) {
+            if (!token) {
                 window.location.href = '/login';
-                return;
             }
-
-            try {
-                const response = await fetch(`/facturas?usuario=${userId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    mostrarFacturas(data.facturas);
-                    verificarAlertas(data.facturas);
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-
-        // Función para mostrar facturas en la tabla
-        function mostrarFacturas(facturas) {
-            const tabla = document.getElementById('tablaFacturas');
-            tabla.innerHTML = '';
-
-            facturas.forEach(factura => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${factura.numeroFactura}</td>
-                    <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                    <td>${factura.consumo.consumoTotal}</td>
-                    <td>$${factura.valores.total.toLocaleString()}</td>
-                    <td>
-                        <span class="badge ${getEstadoBadgeClass(factura.estado)}">
-                            ${factura.estado}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
-                            Editar
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
-                            Eliminar
-                        </button>
-                    </td>
-                `;
-                tabla.appendChild(tr);
-            });
-        }
-
-        // Función para verificar alertas de facturas
-        function verificarAlertas(facturas) {
-            const alertas = [];
-            const ahora = new Date();
-
-            facturas.forEach(factura => {
-                // Verificar facturas vencidas
-                if (factura.estado === 'pendiente' && new Date(factura.fechaVencimiento) < ahora) {
-                    alertas.push(`La factura ${factura.numeroFactura} está vencida`);
-                }
-
-                // Verificar consumo excesivo
-                if (factura.consumo.consumoTotal > 50) { // Ajusta este valor según tus necesidades
-                    alertas.push(`La factura ${factura.numeroFactura} tiene un consumo excesivo`);
-                }
-            });
-
-            if (alertas.length > 0) {
-                const alertaBody = document.getElementById('alertaFacturasBody');
-                alertaBody.innerHTML = alertas.map(alerta => `<p>${alerta}</p>`).join('');
-                const toast = new bootstrap.Toast(document.getElementById('alertaFacturas'));
-                toast.show();
-            }
-        }
-
-        // Función para obtener la clase del badge según el estado
-        function getEstadoBadgeClass(estado) {
-            switch (estado) {
-                case 'pagada':
-                    return 'bg-success';
-                case 'pendiente':
-                    return 'bg-warning';
-                case 'vencida':
-                    return 'bg-danger';
-                default:
-                    return 'bg-secondary';
-            }
-        }
-
-        // Cargar datos al iniciar la página
-        document.addEventListener('DOMContentLoaded', () => {
-            const userName = localStorage.getItem('userName');
-            if (userName) {
-                document.getElementById('userName').textContent = userName;
-            }
-            cargarFacturas();
-            cargarHistorial();
         });
     </script>
 </body>
