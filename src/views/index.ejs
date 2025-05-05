@@ -216,24 +216,28 @@
 </head>
 <body>
     <!-- Barra de navegación -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="navbar-brand" href="/">Sistema de Registro de Consumo de Agua</a>
-            <div class="d-flex align-items-center">
-                <div id="userSection" style="display: none;">
-                    <span id="userName" class="me-3"></span>
-                    <button class="btn btn-outline-primary me-2" onclick="showFacturas()">Mis Facturas</button>
-                    <button class="btn btn-outline-danger" onclick="logout()">Cerrar Sesión</button>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">Sistema de Consumo de Agua</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/facturas">Mis Facturas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/historial">Historial de Consumo</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="me-3">Bienvenido, <span id="userName"></span></span>
+                    <button class="btn btn-outline-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
                 </div>
-                <div id="authSection">
-                    <button class="btn btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Iniciar Sesión</button>
-                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#registroModal">Registrarse</button>
-                </div>
-                <!-- Botón de tema oscuro movido aquí -->
-                <button class="theme-toggle" onclick="toggleTheme()">
-                    <i class="bi bi-moon-fill"></i>
-                    <i class="bi bi-sun-fill"></i>
-                </button>
             </div>
         </div>
     </nav>
@@ -369,53 +373,74 @@
             </div>
         </div>
 
-        <!-- Tabla de Consumos -->
+        <!-- Tabla de Facturas -->
         <div class="card mb-4">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <i class="bi bi-table text-primary"></i>
-                    Historial de Consumos
-                </h5>
-                <div class="row mb-3">
-                    <div class="col">
-                        <input type="text" class="form-control" id="searchFactura" placeholder="Buscar factura...">
-                    </div>
-                    <div class="col">
-                        <select class="form-select" id="filterEstado">
-                            <option value="">Todos los estados</option>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="pagada">Pagada</option>
-                            <option value="vencida">Vencida</option>
-                        </select>
-                    </div>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Mis Facturas</h5>
+                <div>
+                    <select class="form-select me-2" id="estadoFactura" onchange="filtrarFacturas()">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente">Pendiente</option>
+                        <option value="pagada">Pagada</option>
+                        <option value="vencida">Vencida</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="nuevaFactura()">Nueva Factura</button>
                 </div>
+            </div>
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Fecha</th>
+                                <th>Consumo (m³)</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaFacturas">
+                            <!-- Las facturas se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Historial de Consumo -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Historial de Consumo</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Mes</th>
-                                <th>Consumo Bogotá (m³/mes)</th>
-                                <th>Consumo Soacha (m³/mes)</th>
-                                <th>Consumo Gachancipá (m³/mes)</th>
+                                <th>Consumo (m³)</th>
+                                <th>Variación</th>
+                                <th>Estado</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <% if (consumos && consumos.length > 0) { %>
-                                <% consumos.forEach(consumo => { %>
-                                    <tr>
-                                        <td><%= consumo.Mes %></td>
-                                        <td><%= consumo["Consumo Bogotá (m3-mes)"] %></td>
-                                        <td><%= consumo["Consumo Soacha (m3-mes)"] %></td>
-                                        <td><%= consumo["Consumo Gachancipá (m3-mes)"] %></td>
-                                    </tr>
-                                <% }); %>
-                            <% } else { %>
-                                <tr>
-                                    <td colspan="4" class="text-center">No hay datos de consumo disponibles</td>
-                                </tr>
-                            <% } %>
+                        <tbody id="tablaHistorial">
+                            <!-- El historial se cargará aquí -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerta de Facturas -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="alertaFacturas" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <strong class="me-auto">Alertas de Facturas</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="alertaFacturasBody">
+                    <!-- Las alertas se mostrarán aquí -->
                 </div>
             </div>
         </div>
@@ -1257,11 +1282,11 @@
             }
             
             const formData = {
-                nombre: document.getElementById('nombre').value,
-                apellido: document.getElementById('apellido').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
-                telefono: document.getElementById('telefono').value,
+                        nombre: document.getElementById('nombre').value,
+                        apellido: document.getElementById('apellido').value,
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
+                        telefono: document.getElementById('telefono').value,
                 direccion: document.getElementById('direccion').value
             };
 
@@ -1340,7 +1365,7 @@
                     alert('Factura creada exitosamente');
                     cargarFacturas();
                 } else {
-                    const data = await response.json();
+                const data = await response.json();
                     alert(data.error || 'Error al crear la factura');
                 }
             } catch (error) {
@@ -1456,7 +1481,7 @@
 
         function donarMensual(monto) {
             procesarDonacion(monto, true);
-        }
+            }
 
         function procesarDonacionPersonalizada() {
             const monto = document.getElementById('montoPersonalizado').value;
@@ -1511,6 +1536,122 @@
 
         // Cargar anuncios cuando se muestre la pestaña
         document.getElementById('anuncios-tab').addEventListener('shown.bs.tab', cargarAnuncios);
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('rememberMe');
+            window.location.href = '/login';
+        }
+
+        // Función para cargar facturas
+        async function cargarFacturas() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            
+            if (!token || !userId) {
+                window.location.href = '/login';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/facturas?usuario=${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarFacturas(data.facturas);
+                    verificarAlertas(data.facturas);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Función para mostrar facturas en la tabla
+        function mostrarFacturas(facturas) {
+            const tabla = document.getElementById('tablaFacturas');
+            tabla.innerHTML = '';
+
+            facturas.forEach(factura => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${factura.numeroFactura}</td>
+                    <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                    <td>${factura.consumo.consumoTotal}</td>
+                    <td>$${factura.valores.total.toLocaleString()}</td>
+                    <td>
+                        <span class="badge ${getEstadoBadgeClass(factura.estado)}">
+                            ${factura.estado}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                            Editar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                            Eliminar
+                        </button>
+                    </td>
+                `;
+                tabla.appendChild(tr);
+            });
+        }
+
+        // Función para verificar alertas de facturas
+        function verificarAlertas(facturas) {
+            const alertas = [];
+            const ahora = new Date();
+
+            facturas.forEach(factura => {
+                // Verificar facturas vencidas
+                if (factura.estado === 'pendiente' && new Date(factura.fechaVencimiento) < ahora) {
+                    alertas.push(`La factura ${factura.numeroFactura} está vencida`);
+                }
+
+                // Verificar consumo excesivo
+                if (factura.consumo.consumoTotal > 50) { // Ajusta este valor según tus necesidades
+                    alertas.push(`La factura ${factura.numeroFactura} tiene un consumo excesivo`);
+                }
+            });
+
+            if (alertas.length > 0) {
+                const alertaBody = document.getElementById('alertaFacturasBody');
+                alertaBody.innerHTML = alertas.map(alerta => `<p>${alerta}</p>`).join('');
+                const toast = new bootstrap.Toast(document.getElementById('alertaFacturas'));
+                toast.show();
+            }
+        }
+
+        // Función para obtener la clase del badge según el estado
+        function getEstadoBadgeClass(estado) {
+            switch (estado) {
+                case 'pagada':
+                    return 'bg-success';
+                case 'pendiente':
+                    return 'bg-warning';
+                case 'vencida':
+                    return 'bg-danger';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const userName = localStorage.getItem('userName');
+            if (userName) {
+                document.getElementById('userName').textContent = userName;
+            }
+            cargarFacturas();
+            cargarHistorial();
+        });
     </script>
 </body>
 </html>
