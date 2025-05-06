@@ -87,6 +87,13 @@
                     <label for="password" class="form-label">Contraseña</label>
                     <input type="password" class="form-control" id="password" name="password" required>
                 </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Recordar sesión</label>
+                </div>
+                <div class="mb-3 text-end">
+                    <a href="/recuperar-contrasena" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
+                </div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
                 </div>
@@ -101,14 +108,14 @@
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Ocultar alerta de error si existe
             const errorAlert = document.getElementById('errorAlert');
             errorAlert.style.display = 'none';
             errorAlert.textContent = '';
 
             const formData = {
                 email: document.getElementById('email').value,
-                password: document.getElementById('password').value
+                password: document.getElementById('password').value,
+                rememberMe: document.getElementById('rememberMe').checked
             };
 
             try {
@@ -129,10 +136,15 @@
                     localStorage.setItem('userName', data.usuario.nombre);
                     localStorage.setItem('userRole', data.usuario.role);
                     
+                    // Si recordar sesión está activado, guardar en localStorage
+                    if (formData.rememberMe) {
+                        localStorage.setItem('rememberMe', 'true');
+                        localStorage.setItem('lastLogin', new Date().toISOString());
+                    }
+                    
                     // Redirigir al dashboard
                     window.location.href = '/';
                 } else {
-                    // Mostrar error
                     errorAlert.textContent = data.error || 'Error al iniciar sesión';
                     errorAlert.style.display = 'block';
                 }
