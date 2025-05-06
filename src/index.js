@@ -36,6 +36,10 @@ app.use('/politicas', politicasRoutes);
 app.get('/', async (req, res) => {
     try {
         const consumos = await Stats.find({}).sort({ Mes: 1 }).lean();
+        let userName = null;
+        if (req.cookies && req.cookies.userName) {
+            userName = req.cookies.userName;
+        }
         console.log('Datos recuperados:', consumos);
 
         if (!consumos || consumos.length === 0) {
@@ -44,7 +48,8 @@ app.get('/', async (req, res) => {
 
         res.render('index', { 
             title: 'Sistema de Registro de Consumo de Agua',
-            consumos: consumos || []
+            consumos: consumos || [],
+            userName: userName
         });
     } catch (error) {
         console.error('Error al obtener datos:', error);
