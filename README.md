@@ -19,13 +19,17 @@ Aplicación web para visualizar y analizar el consumo de agua en diferentes muni
 - 🔐 Autenticación segura
 - ✅ Validación de políticas de uso
 - 👥 Perfiles de usuario personalizados
+- 🔄 Gestión de sesión mejorada
+- 🎯 Navegación intuitiva según estado de autenticación
+- 🔒 Protección de funcionalidades según nivel de acceso
 
 ### Gestión de Facturas
-- 📝 Registro manual de facturas
+- 📝 Registro manual de facturas (requiere autenticación)
 - 📋 Visualización de facturas personales
 - ✏️ Edición de facturas
 - 🗑️ Eliminación de facturas
 - 🔍 Filtrado y búsqueda de facturas
+- ⚡ Validación de permisos en tiempo real
 
 ### Sostenibilidad y Donaciones
 - 💚 Sistema de donaciones
@@ -131,6 +135,28 @@ proyecto/
 - Validación de datos en frontend y backend
 - Protección de rutas mediante middleware
 - Aceptación obligatoria de políticas de uso
+- Gestión segura de sesiones con limpieza automática
+- Redirección inteligente según estado de autenticación
+
+## Experiencia de Usuario
+
+### Navegación Intuitiva
+- Barra de navegación adaptativa según estado de sesión
+- Botones de autenticación visibles cuando corresponda
+- Mensaje de bienvenida personalizado
+- Transiciones suaves entre estados de sesión
+
+### Gestión de Sesión
+- Inicio de sesión persistente
+- Cierre de sesión seguro con limpieza de datos
+- Redirección automática a página principal
+- Actualización dinámica de la interfaz
+
+### Acceso a Funcionalidades
+- Página principal accesible sin autenticación
+- Creación de facturas protegida por autenticación
+- Alertas informativas para acciones que requieren sesión
+- Interfaz adaptativa según permisos del usuario
 
 ## Planes de Membresía
 
