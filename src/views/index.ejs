@@ -235,6 +235,10 @@
                     <span class="me-3">Bienvenido, <span id="userName"></span></span>
                     <button class="btn btn-outline-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
                 </div>
+                <div class="d-flex align-items-center" id="authLinks" style="display: none;">
+                    <a href="/auth/login" class="btn btn-outline-primary me-2">Iniciar Sesión</a>
+                    <a href="/auth/registro" class="btn btn-primary">Registrarse</a>
+                </div>
             </div>
         </div>
     </nav>
@@ -1287,7 +1291,7 @@
                     
                     // Actualizar la UI
                     document.getElementById('userSession').style.display = 'flex';
-                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('authLinks').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
                     
                     // Cerrar el modal
@@ -1346,7 +1350,7 @@
                     
                     // Actualizar la UI
                     document.getElementById('userSession').style.display = 'flex';
-                    document.getElementById('authSection').style.display = 'none';
+                    document.getElementById('authLinks').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
                     
                     // Cerrar el modal
@@ -1484,8 +1488,11 @@
             
             if (token && userName) {
                 document.getElementById('userSession').style.display = 'flex';
-                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('authLinks').style.display = 'none';
                 document.getElementById('userName').textContent = userName;
+            } else {
+                document.getElementById('userSession').style.display = 'none';
+                document.getElementById('authLinks').style.display = 'flex';
             }
         });
 
