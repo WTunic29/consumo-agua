@@ -332,6 +332,11 @@ app.get('/auth/registro', (req, res) => {
     res.render('registro');
 });
 
+// Ruta para mostrar la página de inicio de sesión
+app.get('/auth/login', (req, res) => {
+    res.render('login');
+});
+
 // Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
