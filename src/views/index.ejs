@@ -432,7 +432,7 @@
                         <option value="pagada">Pagada</option>
                         <option value="vencida">Vencida</option>
                     </select>
-                    <button class="btn btn-primary" onclick="nuevaFactura()">Nueva Factura</button>
+                    <button class="btn btn-primary" onclick="showNuevaFacturaModal()">Nueva Factura</button>
                 </div>
             </div>
             <div class="card-body">
@@ -1579,6 +1579,18 @@
 
         // Cargar anuncios cuando se muestre la pestaña
         document.getElementById('anuncios-tab').addEventListener('shown.bs.tab', cargarAnuncios);
+
+        function showNuevaFacturaModal() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Debes iniciar sesión para crear una factura.');
+                return;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('facturaModal'));
+            document.getElementById('facturaForm').reset();
+            document.getElementById('facturaModalTitle').textContent = 'Nueva Factura';
+            modal.show();
+        }
 
     </script>
 </body>
