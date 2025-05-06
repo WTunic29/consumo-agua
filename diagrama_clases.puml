@@ -1,0 +1,121 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' Estilos
+skinparam class {
+    BackgroundColor LightBlue
+    ArrowColor Black
+    BorderColor Black
+}
+
+' Clases principales
+class Usuario {
+    -id: String
+    -nombre: String
+    -email: String
+    -password: String
+    -tipoMembresia: String
+    -fechaRegistro: DateTime
+    -politicasAceptadas: Boolean
+    +registrar(): void
+    +iniciarSesion(): Boolean
+    +actualizarPerfil(): void
+    +cambiarMembresia(): void
+}
+
+class Factura {
+    -id: String
+    -usuarioId: String
+    -municipioId: String
+    -consumoM3: Decimal
+    -valorTotal: Decimal
+    -fechaFactura: Date
+    -fechaVencimiento: Date
+    -periodo: String
+    -estado: String
+    +calcularValor(): Decimal
+    +marcarComoPagada(): void
+    +verificarVencimiento(): Boolean
+}
+
+class Municipio {
+    -id: String
+    -nombre: String
+    -tarifaBase: Decimal
+    -cargoFijo: Decimal
+    -zona: String
+    +calcularTarifa(): Decimal
+    +obtenerEstadisticas(): Estadistica[]
+}
+
+class Estadistica {
+    -id: String
+    -municipioId: String
+    -consumoPromedio: Decimal
+    -variacionPorcentual: Decimal
+    -fechaCalculo: Date
+    -tipoEstadistica: String
+    +calcularPromedio(): Decimal
+    +calcularVariacion(): Decimal
+}
+
+class Membresia {
+    -id: String
+    -nombre: String
+    -precio: Decimal
+    -beneficios: String[]
+    -accesoApi: Boolean
+    -soportePrioritario: Boolean
+    +obtenerBeneficios(): String[]
+    +verificarAccesoApi(): Boolean
+}
+
+class ServicioEstadisticas {
+    +calcularPromedioConsumo(): Decimal
+    +calcularVariacionPorcentual(): Decimal
+    +generarReporte(): String
+    +obtenerTendencias(): Map<String, Decimal>
+}
+
+class ServicioFacturacion {
+    +generarFactura(): Factura
+    +calcularValorTotal(): Decimal
+    +verificarPagos(): Boolean
+    +enviarRecordatorio(): void
+}
+
+class ServicioUsuarios {
+    +registrarUsuario(): Usuario
+    +validarCredenciales(): Boolean
+    +actualizarPerfil(): void
+    +gestionarMembresia(): void
+}
+
+' Relaciones
+Usuario "1" -- "0..*" Factura : registra >
+Usuario "1" -- "1" Membresia : tiene >
+Municipio "1" -- "0..*" Factura : emite >
+Municipio "1" -- "0..*" Estadistica : genera >
+ServicioEstadisticas ..> Estadistica : utiliza
+ServicioFacturacion ..> Factura : gestiona
+ServicioUsuarios ..> Usuario : administra
+ServicioUsuarios ..> Membresia : gestiona
+
+' Interfaces
+interface ICalculadoraTarifas {
+    +calcularTarifaBase(): Decimal
+    +calcularCargoFijo(): Decimal
+    +calcularValorTotal(): Decimal
+}
+
+interface IGeneradorReportes {
+    +generarReporteConsumo(): String
+    +generarReporteFacturacion(): String
+    +generarReporteEstadisticas(): String
+}
+
+' Implementaciones de interfaces
+Municipio ..|> ICalculadoraTarifas
+ServicioEstadisticas ..|> IGeneradorReportes
+
+@enduml 

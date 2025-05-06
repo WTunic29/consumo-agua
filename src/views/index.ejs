@@ -513,9 +513,9 @@
                                         <h6 class="card-title">Donación Única</h6>
                                         <p class="card-text">Apoya nuestro proyecto con una donación única del monto que desees.</p>
                                         <div class="d-flex gap-2 mb-3">
-                                            <button class="btn btn-outline-primary" onclick="donar(5)">$5</button>
-                                            <button class="btn btn-outline-primary" onclick="donar(10)">$10</button>
-                                            <button class="btn btn-outline-primary" onclick="donar(20)">$20</button>
+                                            <button class="btn btn-outline-primary" onclick="donar(5000)">$5.000</button>
+                                            <button class="btn btn-outline-primary" onclick="donar(10000)">$10.000</button>
+                                            <button class="btn btn-outline-primary" onclick="donar(20000)">$20.000</button>
                                             <button class="btn btn-outline-primary" onclick="donar('custom')">Otro</button>
                                         </div>
                                     </div>
@@ -527,8 +527,8 @@
                                         <h6 class="card-title">Donación Mensual</h6>
                                         <p class="card-text">Conviértete en patrocinador mensual y recibe beneficios exclusivos.</p>
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-outline-success" onclick="donarMensual(5)">$5/mes</button>
-                                            <button class="btn btn-outline-success" onclick="donarMensual(10)">$10/mes</button>
+                                            <button class="btn btn-outline-success" onclick="donarMensual(5000)">$5.000/mes</button>
+                                            <button class="btn btn-outline-success" onclick="donarMensual(10000)">$10.000/mes</button>
                                         </div>
                                     </div>
                                 </div>
@@ -780,10 +780,60 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="montoPersonalizado" class="form-label">Monto a donar ($)</label>
-                        <input type="number" class="form-control" id="montoPersonalizado" min="1" step="1">
+                        <label for="montoPersonalizado" class="form-label">Monto a donar (COP)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="montoPersonalizado" min="1000" step="1000">
+                        </div>
+                        <small class="text-muted">Monto mínimo: $1.000 COP</small>
                     </div>
                     <button class="btn btn-primary" onclick="procesarDonacionPersonalizada()">Donar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Pago PayU -->
+    <div class="modal fade" id="payuModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Procesar Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="payuForm" action="https://checkout.payulatam.com/ppp-web-gateway-payu/" method="post">
+                        <input type="hidden" name="merchantId" value="<%= process.env.PAYU_MERCHANT_ID %>">
+                        <input type="hidden" name="accountId" value="<%= process.env.PAYU_ACCOUNT_ID %>">
+                        <input type="hidden" name="description" value="Donación ConsumoAgua">
+                        <input type="hidden" name="referenceCode" id="referenceCode">
+                        <input type="hidden" name="amount" id="payuAmount">
+                        <input type="hidden" name="tax" value="0">
+                        <input type="hidden" name="taxReturnBase" value="0">
+                        <input type="hidden" name="currency" value="COP">
+                        <input type="hidden" name="signature" id="payuSignature">
+                        <input type="hidden" name="test" value="<%= process.env.NODE_ENV === 'development' ? '1' : '0' %>">
+                        <input type="hidden" name="buyerEmail" id="buyerEmail">
+                        <input type="hidden" name="responseUrl" value="<%= process.env.BASE_URL %>/donacion/exito">
+                        <input type="hidden" name="confirmationUrl" value="<%= process.env.BASE_URL %>/donacion/confirmacion">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="emailInput" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control" id="fullNameInput" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="phoneInput" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Proceder al pago</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1531,18 +1581,41 @@
 
         function procesarDonacionPersonalizada() {
             const monto = document.getElementById('montoPersonalizado').value;
-            if (monto && monto > 0) {
+            if (monto && monto >= 1000) {
                 procesarDonacion(parseFloat(monto));
                 $('#donacionModal').modal('hide');
             } else {
-                alert('Por favor ingrese un monto válido');
+                alert('Por favor ingrese un monto válido (mínimo $1.000 COP)');
             }
         }
 
         function procesarDonacion(monto, mensual = false) {
-            // Aquí implementarías la integración con tu sistema de pagos
-            // Por ejemplo, Stripe, PayPal, etc.
-            alert(`Procesando donación de $${monto} ${mensual ? 'mensual' : 'única'}`);
+            if (!monto || monto < 1000) {
+                alert('El monto mínimo de donación es $1.000 COP');
+                return;
+            }
+            
+            // Generar referencia única
+            const referenceCode = 'DON-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            
+            // Actualizar campos del formulario PayU
+            document.getElementById('referenceCode').value = referenceCode;
+            document.getElementById('payuAmount').value = monto;
+            document.getElementById('buyerEmail').value = document.getElementById('emailInput').value;
+            
+            // Calcular firma
+            const signature = calcularFirmaPayU(referenceCode, monto, 'COP');
+            document.getElementById('payuSignature').value = signature;
+            
+            // Mostrar modal de pago
+            $('#payuModal').modal('show');
+        }
+
+        function calcularFirmaPayU(referenceCode, amount, currency) {
+            const apiKey = '<%= process.env.PAYU_API_KEY %>';
+            const merchantId = '<%= process.env.PAYU_MERCHANT_ID %>';
+            const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
+            return md5(signatureString);
         }
 
         function seleccionarPlan(plan) {
