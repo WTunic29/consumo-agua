@@ -1573,13 +1573,6 @@
         // Cargar anuncios cuando se muestre la pestaña
         document.getElementById('anuncios-tab').addEventListener('shown.bs.tab', cargarAnuncios);
 
-        // Redirección automática si no hay token
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = '/login';
-            }
-        });
     </script>
 </body>
 </html>
