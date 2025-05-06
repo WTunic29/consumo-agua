@@ -1473,12 +1473,9 @@
 
         // Modificar la función de logout para limpiar todo
         function cerrarSesion() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userRole');
-            localStorage.removeItem('rememberMe');
+            localStorage.clear();
             window.location.href = '/';
+            setTimeout(() => window.location.reload(), 100);
         }
 
         // Verificar si hay un usuario logueado al cargar la página
