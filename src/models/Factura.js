@@ -11,11 +11,21 @@ const facturaSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    fechaEmision: {
-        type: Date,
+    monto: {
+        type: Number,
         required: true
     },
+    tipo: {
+        type: String,
+        enum: ['unica', 'mensual'],
+        required: true
+    },
+    fechaEmision: {
+        type: Date,
+        default: Date.now
+    },
     fechaVencimiento: Date,
+    fechaPago: Date,
     periodoFacturacion: {
         inicio: Date,
         fin: Date
@@ -50,9 +60,14 @@ const facturaSchema = new mongoose.Schema({
         type: String,  // URL o path a la imagen escaneada
         required: false
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    referenciaPayU: {
+        type: String
+    },
+    datosPago: {
+        nombre: String,
+        email: String,
+        telefono: String,
+        direccion: String
     }
 });
 
@@ -68,4 +83,68 @@ facturaSchema.pre('save', async function(next) {
     next();
 });
 
-module.exports = mongoose.model('Factura', facturaSchema); 
+// Método para guardar una nueva factura
+facturaSchema.statics.crearFactura = async function(datosFactura) {
+    try {
+        const factura = new this(datosFactura);
+        await factura.save();
+        return factura;
+    } catch (error) {
+        throw new Error(`Error al crear la factura: ${error.message}`);
+    }
+};
+
+// Método para actualizar el estado de una factura
+facturaSchema.statics.actualizarEstado = async function(idFactura, nuevoEstado, datosAdicionales = {}) {
+    try {
+        const actualizacion = {
+            estado: nuevoEstado,
+            ...datosAdicionales
+        };
+        
+        if (nuevoEstado === 'pagada') {
+            actualizacion.fechaPago = new Date();
+        }
+
+        const factura = await this.findByIdAndUpdate(
+            idFactura,
+            actualizacion,
+            { new: true }
+        );
+
+        if (!factura) {
+            throw new Error('Factura no encontrada');
+        }
+
+        return factura;
+    } catch (error) {
+        throw new Error(`Error al actualizar la factura: ${error.message}`);
+    }
+};
+
+// Método para obtener las facturas de un usuario
+facturaSchema.statics.obtenerFacturasUsuario = async function(idUsuario) {
+    try {
+        return await this.find({ usuario: idUsuario })
+            .sort({ fechaCreacion: -1 });
+    } catch (error) {
+        throw new Error(`Error al obtener las facturas: ${error.message}`);
+    }
+};
+
+// Método para obtener una factura específica
+facturaSchema.statics.obtenerFactura = async function(idFactura) {
+    try {
+        const factura = await this.findById(idFactura);
+        if (!factura) {
+            throw new Error('Factura no encontrada');
+        }
+        return factura;
+    } catch (error) {
+        throw new Error(`Error al obtener la factura: ${error.message}`);
+    }
+};
+
+const Factura = mongoose.model('Factura', facturaSchema);
+
+module.exports = Factura; 
