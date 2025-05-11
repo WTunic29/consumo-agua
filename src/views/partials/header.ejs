@@ -14,17 +14,39 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/registro">Registro</a>
+                        <a class="nav-link" href="/donaciones">Donaciones</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/auth/login">Login</a>
+                        <a class="nav-link" href="/facturas">Facturas</a>
                     </li>
                 </ul>
+                <div class="d-flex">
+                    <% if (locals.user) { %>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i> <%= user.nombre %>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="/perfil">Mi Perfil</a></li>
+                                <li><a class="dropdown-item" href="/facturas">Mis Facturas</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/auth/logout">Cerrar Sesión</a></li>
+                            </ul>
+                        </div>
+                    <% } else { %>
+                        <a href="/auth/login" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        </a>
+                        <a href="/auth/register" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Registrarse
+                        </a>
+                    <% } %>
+                </div>
             </div>
         </div>
     </nav>
