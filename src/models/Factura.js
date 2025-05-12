@@ -13,12 +13,13 @@ const facturaSchema = new mongoose.Schema({
     },
     monto: {
         type: Number,
-        required: true
+        required: false,
+        default: 0
     },
     tipo: {
         type: String,
         enum: ['unica', 'mensual'],
-        required: true
+        default: 'mensual'
     },
     fechaEmision: {
         type: Date,
@@ -31,15 +32,36 @@ const facturaSchema = new mongoose.Schema({
         fin: Date
     },
     consumo: {
-        lecturaAnterior: Number,
-        lecturaActual: Number,
-        consumoTotal: Number,  // en metros cúbicos
+        lecturaAnterior: {
+            type: Number,
+            required: true
+        },
+        lecturaActual: {
+            type: Number,
+            required: true
+        },
+        consumoTotal: {
+            type: Number,
+            default: 0
+        }
     },
     valores: {
-        cargoFijo: Number,
-        consumo: Number,
-        otros: Number,
-        total: Number
+        cargoFijo: {
+            type: Number,
+            default: 0
+        },
+        consumo: {
+            type: Number,
+            default: 0
+        },
+        otros: {
+            type: Number,
+            default: 0
+        },
+        total: {
+            type: Number,
+            default: 0
+        }
     },
     direccion: {
         calle: String,
@@ -47,54 +69,81 @@ const facturaSchema = new mongoose.Schema({
         codigoPostal: String
     },
     metricasSostenibilidad: {
-        comparacionPromedio: Number,  // Porcentaje por encima/debajo del promedio de la zona
-        tendencia: Number,           // Porcentaje de cambio respecto a la última factura
-        clasificacionConsumo: String // 'bajo', 'medio', 'alto'
+        comparacionPromedio: Number,
+        tendencia: Number,
+        clasificacionConsumo: {
+            type: String,
+            enum: ['bajo', 'medio', 'alto'],
+            default: 'medio'
+        }
     },
     estado: {
         type: String,
         enum: ['pendiente', 'pagada', 'vencida'],
         default: 'pendiente'
     },
-    imagenFactura: {
-        type: String,  // URL o path a la imagen escaneada
-        required: false
-    },
-    referenciaPayU: {
-        type: String
-    },
+    imagenFactura: String,
+    referenciaPayU: String,
     datosPago: {
         nombre: String,
         email: String,
         telefono: String,
         direccion: String
     }
+}, {
+    timestamps: true
 });
 
-// Índices para mejorar el rendimiento de las consultas
+// Índices
 facturaSchema.index({ usuario: 1, fechaEmision: -1 });
 facturaSchema.index({ numeroFactura: 1 }, { unique: true });
 
-// Middleware para calcular métricas antes de guardar
+// Middleware para calcular valores antes de guardar
 facturaSchema.pre('save', async function(next) {
-    if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
-        this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
+    try {
+        // Calcular consumo total
+        if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
+            this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
+        }
+
+        // Calcular total
+        if (this.valores) {
+            this.valores.total = (this.valores.cargoFijo || 0) + 
+                               (this.valores.consumo || 0) + 
+                               (this.valores.otros || 0);
+            this.monto = this.valores.total; // Actualizar monto con el total
+        }
+
+        // Calcular métricas de sostenibilidad
+        if (this.consumo.consumoTotal) {
+            // Aquí podrías agregar la lógica para calcular las métricas
+            // Por ahora solo establecemos valores por defecto
+            this.metricasSostenibilidad = {
+                comparacionPromedio: 0,
+                tendencia: 0,
+                clasificacionConsumo: 'medio'
+            };
+        }
+
+        next();
+    } catch (error) {
+        next(error);
     }
-    next();
 });
 
-// Método para guardar una nueva factura
+// Método para crear factura
 facturaSchema.statics.crearFactura = async function(datosFactura) {
     try {
         const factura = new this(datosFactura);
         await factura.save();
         return factura;
     } catch (error) {
+        console.error('Error al crear factura:', error);
         throw new Error(`Error al crear la factura: ${error.message}`);
     }
 };
 
-// Método para actualizar el estado de una factura
+// Método para actualizar estado
 facturaSchema.statics.actualizarEstado = async function(idFactura, nuevoEstado, datosAdicionales = {}) {
     try {
         const actualizacion = {
@@ -118,21 +167,23 @@ facturaSchema.statics.actualizarEstado = async function(idFactura, nuevoEstado, 
 
         return factura;
     } catch (error) {
+        console.error('Error al actualizar estado:', error);
         throw new Error(`Error al actualizar la factura: ${error.message}`);
     }
 };
 
-// Método para obtener las facturas de un usuario
+// Método para obtener facturas de usuario
 facturaSchema.statics.obtenerFacturasUsuario = async function(idUsuario) {
     try {
         return await this.find({ usuario: idUsuario })
-            .sort({ fechaCreacion: -1 });
+            .sort({ fechaEmision: -1 });
     } catch (error) {
+        console.error('Error al obtener facturas:', error);
         throw new Error(`Error al obtener las facturas: ${error.message}`);
     }
 };
 
-// Método para obtener una factura específica
+// Método para obtener una factura
 facturaSchema.statics.obtenerFactura = async function(idFactura) {
     try {
         const factura = await this.findById(idFactura);
@@ -141,6 +192,7 @@ facturaSchema.statics.obtenerFactura = async function(idFactura) {
         }
         return factura;
     } catch (error) {
+        console.error('Error al obtener factura:', error);
         throw new Error(`Error al obtener la factura: ${error.message}`);
     }
 };
