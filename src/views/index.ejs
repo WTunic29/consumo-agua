@@ -763,6 +763,14 @@
                             <label class="form-label">Imagen de la Factura</label>
                             <input type="file" class="form-control" id="imagenFactura" accept="image/*">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" id="estadoFacturaForm">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="pagada">Pagada</option>
+                                <option value="vencida">Vencida</option>
+                            </select>
+                        </div>
                         <button type="submit" class="btn btn-primary">Guardar</button>
                     </form>
                 </div>
@@ -1274,23 +1282,19 @@
         // Función para cargar las facturas del usuario
         async function cargarFacturas() {
             const token = localStorage.getItem('token');
-            const userId = localStorage.getItem('userId');
-            
-            if (!token || !userId) {
-                console.error('No hay token o userId');
+            if (!token) {
+                console.error('No hay token');
                 return;
             }
-
             try {
-                const response = await fetch(`/facturas/${userId}`, {
+                const response = await fetch(`/facturas`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-
                 if (response.ok) {
                     const data = await response.json();
-                    mostrarFacturas(data.facturas);
+                    mostrarFacturas(data.facturas || data); // Soporta ambos formatos
                 } else {
                     console.error('Error al cargar facturas');
                 }
@@ -1695,7 +1699,8 @@
                         consumo: 0,
                         otros: 0,
                         total: total
-                    }
+                    },
+                    estado: document.getElementById('estadoFacturaForm').value
                 };
 
                 try {
