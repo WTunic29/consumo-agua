@@ -454,7 +454,7 @@
                                 <th>Acciones</th>
                                 </tr>
                         </thead>
-                        <tbody id="tablaFacturas">
+                        <tbody id="facturasTableBody">
                             <!-- Las facturas se cargarán aquí -->
                         </tbody>
                     </table>
@@ -1283,45 +1283,48 @@
         async function cargarFacturas() {
             const token = localStorage.getItem('token');
             if (!token) {
-                console.error('No hay token');
+                console.log('No hay token disponible');
                 return;
             }
+
             try {
-                const response = await fetch(`/facturas`, {
+                const response = await fetch('/facturas', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-                if (response.ok) {
-                    const data = await response.json();
-                    mostrarFacturas(data.facturas || data); // Soporta ambos formatos
-                } else {
-                    console.error('Error al cargar facturas');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const facturas = await response.json();
+                console.log('Facturas recibidas:', facturas);
+
+                const tbody = document.getElementById('facturasTableBody');
+                tbody.innerHTML = '';
+
+                facturas.forEach(factura => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${factura.numeroFactura}</td>
+                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                        <td>${factura.consumo.lecturaAnterior}</td>
+                        <td>${factura.consumo.lecturaActual}</td>
+                        <td>${factura.consumo.consumoTotal}</td>
+                        <td>$${factura.valores.total.toLocaleString()}</td>
+                        <td>${factura.estado}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">Eliminar</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al cargar facturas:', error);
+                alert('Error al cargar las facturas');
             }
-        }
-
-        // Función para mostrar las facturas en la tabla
-        function mostrarFacturas(facturas) {
-            console.log('Facturas recibidas:', facturas);
-            const tbody = document.getElementById('facturasTableBody');
-            if (!tbody) return;
-
-            tbody.innerHTML = facturas.map(factura => `
-                <tr>
-                    <td>${factura.numeroFactura}</td>
-                    <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                    <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
-                    <td>$${factura.valores.total}</td>
-                    <td><span class="badge bg-${factura.estado === 'pagada' ? 'success' : 'warning'}">${factura.estado}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">Editar</button>
-                        <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">Eliminar</button>
-                    </td>
-                </tr>
-            `).join('');
         }
 
         // Modificar la función de login para incluir el ID del usuario y cargar facturas
