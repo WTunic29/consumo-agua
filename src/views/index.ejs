@@ -1423,6 +1423,7 @@
                     
                     // Mostrar el contenedor de facturas vacío
                     document.getElementById('facturasContainer').style.display = 'block';
+                    cargarFacturas(); // Ahora carga las facturas después del registro
                     
                     alert('Registro exitoso');
                 } else {
@@ -1548,6 +1549,7 @@
                 document.getElementById('userSession').style.display = 'flex';
                 document.getElementById('authLinks').style.display = 'none';
                 document.getElementById('userName').textContent = userName;
+                cargarFacturas(); // Ahora carga las facturas al cargar la página si hay sesión
             } else {
                 document.getElementById('userSession').style.display = 'none';
                 document.getElementById('authLinks').style.display = 'flex';
