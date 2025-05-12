@@ -1668,6 +1668,55 @@
             modal.show();
         }
 
+        // Manejador para el formulario de nueva factura
+        if (document.getElementById('facturaForm')) {
+            document.getElementById('facturaForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    alert('Debes iniciar sesión para crear una factura.');
+                    return;
+                }
+
+                const formData = {
+                    numeroFactura: document.getElementById('numeroFactura').value,
+                    fechaEmision: document.getElementById('fechaEmision').value,
+                    consumo: {
+                        lecturaAnterior: parseFloat(document.getElementById('lecturaAnterior').value),
+                        lecturaActual: parseFloat(document.getElementById('lecturaActual').value)
+                    }
+                    // Puedes agregar más campos si tu backend los requiere
+                };
+
+                try {
+                    const response = await fetch('/facturas', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (response.ok) {
+                        alert('Factura creada exitosamente');
+                        // Cierra el modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('facturaModal'));
+                        modal.hide();
+                        // Recarga la tabla de facturas
+                        cargarFacturas();
+                    } else {
+                        const data = await response.json();
+                        alert(data.error || 'Error al crear la factura');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error al crear la factura');
+                }
+            });
+        }
+
     </script>
 </body>
 </html>
