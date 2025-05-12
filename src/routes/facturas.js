@@ -47,7 +47,11 @@ router.get('/', auth, async (req, res) => {
             paginaActual: page
         });
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener facturas' });
+        console.error('Error al obtener facturas:', error);
+        res.status(500).json({ 
+            error: 'Error al obtener facturas',
+            detalles: error.message 
+        });
     }
 });
 
@@ -79,18 +83,11 @@ router.post('/', auth, upload.single('imagen'), validarFactura, async (req, res)
             factura: nuevaFactura
         });
     } catch (error) {
-        res.status(500).json({ error: 'Error al registrar factura' });
-    }
-});
-
-// Obtener todas las facturas del usuario
-router.get('/', auth, async (req, res) => {
-    try {
-        const facturas = await Factura.find({ usuario: req.user._id })
-            .sort({ fechaEmision: -1 });
-        res.json(facturas);
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener facturas' });
+        console.error('Error al registrar factura:', error);
+        res.status(500).json({ 
+            error: 'Error al registrar factura',
+            detalles: error.message 
+        });
     }
 });
 
@@ -106,7 +103,11 @@ router.get('/:id', auth, async (req, res) => {
         }
         res.json(factura);
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener la factura' });
+        console.error('Error al obtener la factura:', error);
+        res.status(500).json({ 
+            error: 'Error al obtener la factura',
+            detalles: error.message 
+        });
     }
 });
 
@@ -128,7 +129,11 @@ router.put('/:id', auth, async (req, res) => {
 
         res.json(factura);
     } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar la factura' });
+        console.error('Error al actualizar la factura:', error);
+        res.status(500).json({ 
+            error: 'Error al actualizar la factura',
+            detalles: error.message 
+        });
     }
 });
 
@@ -146,7 +151,11 @@ router.delete('/:id', auth, async (req, res) => {
 
         res.json({ mensaje: 'Factura eliminada correctamente' });
     } catch (error) {
-        res.status(500).json({ error: 'Error al eliminar la factura' });
+        console.error('Error al eliminar la factura:', error);
+        res.status(500).json({ 
+            error: 'Error al eliminar la factura',
+            detalles: error.message 
+        });
     }
 });
 
