@@ -1679,14 +1679,23 @@
                     return;
                 }
 
+                const lecturaAnterior = parseFloat(document.getElementById('lecturaAnterior').value);
+                const lecturaActual = parseFloat(document.getElementById('lecturaActual').value);
+                const total = Math.abs(lecturaActual - lecturaAnterior) * 1000; // ejemplo de cálculo
+
                 const formData = {
                     numeroFactura: document.getElementById('numeroFactura').value,
                     fechaEmision: document.getElementById('fechaEmision').value,
                     consumo: {
-                        lecturaAnterior: parseFloat(document.getElementById('lecturaAnterior').value),
-                        lecturaActual: parseFloat(document.getElementById('lecturaActual').value)
+                        lecturaAnterior: lecturaAnterior,
+                        lecturaActual: lecturaActual
+                    },
+                    valores: {
+                        cargoFijo: 0,
+                        consumo: 0,
+                        otros: 0,
+                        total: total
                     }
-                    // Puedes agregar más campos si tu backend los requiere
                 };
 
                 try {
