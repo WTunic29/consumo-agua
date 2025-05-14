@@ -520,6 +520,66 @@
             const params = new URLSearchParams(formData);
             window.location.href = `/facturas?${params.toString()}`;
         });
+
+        async function cargarFacturas() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const response = await fetch('/api/facturas', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const facturasBody = document.getElementById('facturasBody');
+                facturasBody.innerHTML = '';
+
+                data.facturas.forEach(factura => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${factura.numeroFactura}</td>
+                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                        <td>${factura.consumo?.lecturaAnterior || 'N/A'}</td>
+                        <td>${factura.consumo?.lecturaActual || 'N/A'}</td>
+                        <td>${factura.consumo?.consumoTotal || 'N/A'}</td>
+                        <td>$${factura.valores?.total?.toLocaleString() || '0'}</td>
+                        <td>
+                            <span class="badge ${getEstadoClass(factura.estado)}">
+                                ${factura.estado}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="/facturas/${factura._id}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                ${factura.estado === 'Pendiente' ? `
+                                    <a href="/facturas/${factura._id}/pagar" class="btn btn-sm btn-success">
+                                        <i class="fas fa-credit-card"></i>
+                                    </a>
+                                ` : ''}
+                            </div>
+                        </td>
+                    `;
+                    facturasBody.appendChild(row);
+                });
+
+                // Actualizar paginación
+                actualizarPaginacion(data.totalPaginas, data.paginaActual);
+            } catch (error) {
+                console.error('Error al cargar facturas:', error);
+                alert('Error al cargar las facturas. Por favor, intente nuevamente.');
+            }
+        }
     </script>
 </body>
 </html> 

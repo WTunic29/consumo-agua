@@ -24,44 +24,6 @@ router.use(auth);
 // Obtener todas las facturas del usuario
 router.get('/', facturaController.getFacturas);
 
-// Obtener facturas con paginación y filtros
-router.get('/', async (req, res) => {
-    try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        // Construir filtros
-        const filtros = { usuario: req.user._id };
-        if (req.query.estado) filtros.estado = req.query.estado;
-        if (req.query.fechaDesde) filtros.fechaEmision = { $gte: new Date(req.query.fechaDesde) };
-        if (req.query.fechaHasta) filtros.fechaEmision = { ...filtros.fechaEmision, $lte: new Date(req.query.fechaHasta) };
-        if (req.query.numeroFactura) filtros.numeroFactura = new RegExp(req.query.numeroFactura, 'i');
-
-        // Obtener facturas
-        const facturas = await Factura.find(filtros)
-            .sort({ fechaEmision: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        // Obtener total de documentos para la paginación
-        const total = await Factura.countDocuments(filtros);
-
-        res.json({
-            facturas,
-            total,
-            totalPaginas: Math.ceil(total / limit),
-            paginaActual: page
-        });
-    } catch (error) {
-        console.error('Error al obtener facturas:', error);
-        res.status(500).json({ 
-            error: 'Error al obtener facturas',
-            detalles: error.message 
-        });
-    }
-});
-
 // Crear factura con imagen
 router.post('/', upload.single('imagen'), validarFactura, async (req, res) => {
     try {
