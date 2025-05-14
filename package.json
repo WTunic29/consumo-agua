@@ -28,6 +28,7 @@
     "color-convert": "^2.0.1",
     "color-name": "^1.1.4",
     "core-js": "^3.42.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "ejs": "^3.1.9",
     "exceljs": "^4.4.0",
