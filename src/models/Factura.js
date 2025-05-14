@@ -9,7 +9,8 @@ const facturaSchema = new mongoose.Schema({
     numeroFactura: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        index: true
     },
     monto: {
         type: Number,
@@ -96,7 +97,6 @@ const facturaSchema = new mongoose.Schema({
 
 // Índices
 facturaSchema.index({ usuario: 1, fechaEmision: -1 });
-facturaSchema.index({ numeroFactura: 1 }, { unique: true });
 
 // Middleware para calcular valores antes de guardar
 facturaSchema.pre('save', async function(next) {
