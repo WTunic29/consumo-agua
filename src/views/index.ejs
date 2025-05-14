@@ -1368,6 +1368,7 @@
                         <td>${factura.consumo.lecturaActual}</td>
                         <td>${factura.consumo.consumoTotal}</td>
                         <td>$${factura.valores.total.toLocaleString()}</td>
+                        <td>$${factura.valores.total.toLocaleString()}</td>
                         <td>${factura.estado}</td>
                         <td>
                             <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">Editar</button>
@@ -1950,7 +1951,7 @@
                         tr.innerHTML = `
                             <td>${factura.numeroFactura}</td>
                             <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                            <td>${factura.consumo.consumoTotal} m³</td>
+                            <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
                             <td>$${factura.valores.total.toLocaleString()}</td>
                             <td>
                                 <span class="badge bg-${getEstadoColor(factura.estado)}">
@@ -2082,7 +2083,7 @@
                         tr.innerHTML = `
                             <td>${factura.numeroFactura}</td>
                             <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                            <td>${factura.consumo.consumoTotal} m³</td>
+                            <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
                             <td>$${factura.valores.total.toLocaleString()}</td>
                             <td>
                                 <span class="badge bg-${getEstadoColor(factura.estado)}">

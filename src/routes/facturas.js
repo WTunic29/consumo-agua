@@ -67,16 +67,28 @@ router.get('/', auth, async (req, res) => {
 
         // Filtro por rango de consumo
         if (req.query.consumoMin || req.query.consumoMax) {
-            filtros['consumo.consumoTotal'] = {};
-            if (req.query.consumoMin) {
-                filtros['consumo.consumoTotal'].$gte = parseFloat(req.query.consumoMin);
-            }
+            filtros.$expr = {
+                $and: [
+                    {
+                        $gte: [
+                            { $subtract: ['$consumo.lecturaActual', '$consumo.lecturaAnterior'] },
+                            parseFloat(req.query.consumoMin) || 0
+                        ]
+                    }
+                ]
+            };
+            
             if (req.query.consumoMax) {
-                filtros['consumo.consumoTotal'].$lte = parseFloat(req.query.consumoMax);
+                filtros.$expr.$and.push({
+                    $lte: [
+                        { $subtract: ['$consumo.lecturaActual', '$consumo.lecturaAnterior'] },
+                        parseFloat(req.query.consumoMax)
+                    ]
+                });
             }
         }
 
-        console.log('Filtros aplicados:', filtros);
+        console.log('Filtros aplicados:', JSON.stringify(filtros, null, 2));
 
         // Obtener facturas
         const facturas = await Factura.find(filtros)
