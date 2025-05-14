@@ -68,6 +68,51 @@
 </head>
 <body>
     <div class="container mt-4">
+        <% if (error) { %>
+            <div class="alert alert-danger" role="alert">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <div class="row mb-4">
+            <div class="col">
+                <h2>Mis Facturas</h2>
+            </div>
+            <div class="col text-end">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaFacturaModal">
+                    Nueva Factura
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="filtrosForm" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado" name="estado">
+                            <option value="">Todos</option>
+                            <option value="pendiente" <%= query.estado === 'pendiente' ? 'selected' : '' %>>Pendiente</option>
+                            <option value="pagada" <%= query.estado === 'pagada' ? 'selected' : '' %>>Pagada</option>
+                            <option value="vencida" <%= query.estado === 'vencida' ? 'selected' : '' %>>Vencida</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaDesde" class="form-label">Fecha Desde</label>
+                        <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="<%= query.fechaDesde || '' %>">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+                        <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="<%= query.fechaHasta || '' %>">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Sección de Membresía -->
         <div class="row mb-4">
             <div class="col-md-4">
@@ -245,48 +290,6 @@
             </div>
         </div>
 
-        <!-- Filtros Avanzados -->
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">Filtros</h5>
-            </div>
-            <div class="card-body">
-                <form id="filtrosForm" class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Estado</label>
-                        <select class="form-select" name="estado">
-                            <option value="">Todos</option>
-                            <option value="pendiente">Pendiente</option>
-                            <option value="pagada">Pagada</option>
-                            <option value="vencida">Vencida</option>
-                            <option value="mora">Mora</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Fecha Desde</label>
-                        <input type="date" class="form-control" name="fechaDesde">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Fecha Hasta</label>
-                        <input type="date" class="form-control" name="fechaHasta">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Rango de Monto</label>
-                        <select class="form-select" name="rangoMonto">
-                            <option value="">Todos</option>
-                            <option value="bajo">Menos de $50.000</option>
-                            <option value="medio">$50.000 - $100.000</option>
-                            <option value="alto">Más de $100.000</option>
-                        </select>
-                    </div>
-                    <div class="col-12 text-end">
-                        <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
-                        <button type="reset" class="btn btn-secondary">Limpiar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         <!-- Exportación y Acciones -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="btn-group">
@@ -309,7 +312,7 @@
 
         <!-- Tabla de Facturas -->
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-striped">
                 <thead>
                     <tr>
                         <th>Número</th>
@@ -318,59 +321,38 @@
                         <th>Monto</th>
                         <th>Estado</th>
                         <th>Días Mora</th>
-                        <th>Beneficios</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% if (facturas && facturas.length > 0) { %>
                         <% facturas.forEach(factura => { %>
-                            <tr class="<%= factura.estado === 'vencida' ? 'factura-vencida' : '' %> <%= factura.estado === 'mora' ? 'factura-mora' : '' %>">
-                                <td><%= factura.numeroFactura %></td>
+                            <tr>
+                                <td><%= factura.numeroFactura || 'N/A' %></td>
                                 <td><%= new Date(factura.fechaEmision).toLocaleDateString() %></td>
-                                <td><%= new Date(factura.fechaVencimiento).toLocaleDateString() %></td>
-                                <td>$<%= factura.monto.toLocaleString() %></td>
+                                <td><%= factura.fechaVencimiento ? new Date(factura.fechaVencimiento).toLocaleDateString() : 'N/A' %></td>
+                                <td>$<%= (factura.monto || 0).toLocaleString() %></td>
                                 <td>
-                                    <span class="badge <%= 
-                                        factura.estado === 'pagada' ? 'bg-success' : 
-                                        factura.estado === 'vencida' ? 'bg-warning' : 
-                                        factura.estado === 'mora' ? 'bg-danger' : 
-                                        'bg-primary' %> estado-badge">
-                                        <%= factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1) %>
+                                    <span class="badge bg-<%= factura.estado === 'pagada' ? 'success' : 
+                                                          factura.estado === 'vencida' ? 'danger' : 
+                                                          factura.estado === 'mora' ? 'warning' : 'secondary' %>">
+                                        <%= factura.estado || 'pendiente' %>
                                     </span>
                                 </td>
+                                <td><%= factura.diasMora || 0 %></td>
                                 <td>
-                                    <% if (factura.diasMora > 0) { %>
-                                        <span class="text-danger"><%= factura.diasMora %> días</span>
-                                    <% } else { %>
-                                        -
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <% if (factura.beneficios) { %>
-                                        <% if (factura.beneficios.puntosGanados > 0) { %>
-                                            <span class="badge bg-info">
-                                                +<%= factura.beneficios.puntosGanados %> puntos
-                                            </span>
+                                    <div class="btn-group">
+                                        <a href="/facturas/<%= factura._id %>" class="btn btn-sm btn-info">Ver</a>
+                                        <% if (factura.estado !== 'pagada') { %>
+                                            <a href="/facturas/<%= factura._id %>/pagar" class="btn btn-sm btn-success">Pagar</a>
                                         <% } %>
-                                        <% if (factura.beneficios.descuentoAplicado > 0) { %>
-                                            <span class="badge bg-success">
-                                                <%= factura.beneficios.descuentoAplicado * 100 %>% descuento
-                                            </span>
-                                        <% } %>
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <a href="/facturas/<%= factura._id %>" class="btn btn-sm btn-info">Ver</a>
-                                    <% if (factura.estado !== 'pagada') { %>
-                                        <a href="/facturas/<%= factura._id %>/pagar" class="btn btn-sm btn-success">Pagar</a>
-                                    <% } %>
+                                    </div>
                                 </td>
                             </tr>
                         <% }); %>
                     <% } else { %>
                         <tr>
-                            <td colspan="8" class="text-center">No hay facturas registradas</td>
+                            <td colspan="7" class="text-center">No hay facturas registradas</td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -379,18 +361,18 @@
 
         <!-- Paginación -->
         <% if (totalPaginas > 1) { %>
-            <nav aria-label="Navegación de facturas" class="mt-4">
+            <nav aria-label="Navegación de páginas">
                 <ul class="pagination justify-content-center">
                     <li class="page-item <%= paginaActual === 1 ? 'disabled' : '' %>">
-                        <a class="page-link" href="?pagina=<%= paginaActual - 1 %>">Anterior</a>
+                        <a class="page-link" href="?pagina=<%= paginaActual - 1 %>&<%= new URLSearchParams(query).toString() %>">Anterior</a>
                     </li>
                     <% for(let i = 1; i <= totalPaginas; i++) { %>
                         <li class="page-item <%= paginaActual === i ? 'active' : '' %>">
-                            <a class="page-link" href="?pagina=<%= i %>"><%= i %></a>
+                            <a class="page-link" href="?pagina=<%= i %>&<%= new URLSearchParams(query).toString() %>"><%= i %></a>
                         </li>
                     <% } %>
                     <li class="page-item <%= paginaActual === totalPaginas ? 'disabled' : '' %>">
-                        <a class="page-link" href="?pagina=<%= paginaActual + 1 %>">Siguiente</a>
+                        <a class="page-link" href="?pagina=<%= paginaActual + 1 %>&<%= new URLSearchParams(query).toString() %>">Siguiente</a>
                     </li>
                 </ul>
             </nav>
@@ -431,6 +413,50 @@
                             <canvas id="promedioZonaChart"></canvas>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nueva Factura -->
+    <div class="modal fade" id="nuevaFacturaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Factura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nuevaFacturaForm">
+                        <div class="mb-3">
+                            <label for="numeroFactura" class="form-label">Número de Factura</label>
+                            <input type="text" class="form-control" id="numeroFactura" name="numeroFactura" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaEmision" class="form-label">Fecha de Emisión</label>
+                            <input type="date" class="form-control" id="fechaEmision" name="fechaEmision" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaVencimiento" class="form-label">Fecha de Vencimiento</label>
+                            <input type="date" class="form-control" id="fechaVencimiento" name="fechaVencimiento" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="lecturaAnterior" class="form-label">Lectura Anterior (m³)</label>
+                            <input type="number" step="0.01" class="form-control" id="lecturaAnterior" name="lecturaAnterior" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="lecturaActual" class="form-label">Lectura Actual (m³)</label>
+                            <input type="number" step="0.01" class="form-control" id="lecturaActual" name="lecturaActual" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="monto" class="form-label">Monto Total</label>
+                            <input type="number" step="0.01" class="form-control" id="monto" name="monto" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="crearFactura(document.getElementById('nuevaFacturaForm'))">Guardar</button>
                 </div>
             </div>
         </div>
@@ -515,22 +541,25 @@
             });
         }
 
-        // Manejo de filtros
+        // Manejar envío de filtros
         document.getElementById('filtrosForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const params = new URLSearchParams(formData);
-            window.location.href = `/facturas?${params.toString()}`;
+            const queryParams = new URLSearchParams(formData).toString();
+            window.location.href = `/facturas?${queryParams}`;
         });
 
         // Función para crear nueva factura
-        async function crearFactura(formData) {
+        async function crearFactura(form) {
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('Debe iniciar sesión para crear facturas');
                 window.location.href = '/login';
                 return;
             }
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
 
             try {
                 const response = await fetch('/facturas', {
@@ -539,7 +568,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(data)
                 });
 
                 if (response.ok) {
@@ -551,8 +580,8 @@
                         window.location.href = '/login';
                         return;
                     }
-                    const data = await response.json();
-                    alert(data.error || 'Error al crear la factura');
+                    const errorData = await response.json();
+                    alert(errorData.error || 'Error al crear la factura');
                 }
             } catch (error) {
                 console.error('Error:', error);
