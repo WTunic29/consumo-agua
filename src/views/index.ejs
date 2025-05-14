@@ -694,33 +694,33 @@
                 <div class="modal-body">
                     <form id="registroForm">
                         <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" required>
+                            <label for="registroNombre" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="registroNombre" required>
                         </div>
                         <div class="mb-3">
-                            <label for="apellido" class="form-label">Apellido</label>
-                            <input type="text" class="form-control" id="apellido" required>
+                            <label for="registroApellido" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="registroApellido" required>
                         </div>
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" required>
+                            <label for="registroEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="registroEmail" required>
                         </div>
                         <div class="mb-3">
-                            <label for="password" class="form-label">Contraseña</label>
-                            <input type="password" class="form-control" id="password" required>
+                            <label for="registroPassword" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="registroPassword" required>
                             <div class="form-text">La contraseña debe tener al menos 6 caracteres.</div>
                         </div>
                         <div class="mb-3">
-                            <label for="telefono" class="form-label">Teléfono</label>
-                            <input type="tel" class="form-control" id="telefono">
+                            <label for="registroTelefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="registroTelefono">
                         </div>
                         <div class="mb-3">
-                            <label for="direccion" class="form-label">Dirección</label>
-                            <input type="text" class="form-control" id="direccion">
+                            <label for="registroDireccion" class="form-label">Dirección</label>
+                            <input type="text" class="form-control" id="registroDireccion">
                         </div>
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="aceptaPoliticas" required>
-                            <label class="form-check-label" for="aceptaPoliticas">
+                            <input type="checkbox" class="form-check-input" id="registroAceptaPoliticas" required>
+                            <label class="form-check-label" for="registroAceptaPoliticas">
                                 He leído y acepto las <a href="/politicas" target="_blank">políticas de uso y privacidad</a>
                             </label>
                         </div>
@@ -869,30 +869,30 @@
                         <input type="hidden" name="merchantId" value="<%= process.env.PAYU_MERCHANT_ID %>">
                         <input type="hidden" name="accountId" value="<%= process.env.PAYU_ACCOUNT_ID %>">
                         <input type="hidden" name="description" value="Donación ConsumoAgua">
-                        <input type="hidden" name="referenceCode" id="referenceCode">
+                        <input type="hidden" name="referenceCode" id="payuReferenceCode">
                         <input type="hidden" name="amount" id="payuAmount">
                         <input type="hidden" name="tax" value="0">
                         <input type="hidden" name="taxReturnBase" value="0">
                         <input type="hidden" name="currency" value="COP">
                         <input type="hidden" name="signature" id="payuSignature">
                         <input type="hidden" name="test" value="<%= process.env.NODE_ENV === 'development' ? '1' : '0' %>">
-                        <input type="hidden" name="buyerEmail" id="buyerEmail">
+                        <input type="hidden" name="buyerEmail" id="payuBuyerEmail">
                         <input type="hidden" name="responseUrl" value="<%= process.env.BASE_URL %>/donacion/exito">
                         <input type="hidden" name="confirmationUrl" value="<%= process.env.BASE_URL %>/donacion/confirmacion">
                         
                         <div class="mb-3">
-                            <label class="form-label">Correo electrónico</label>
-                            <input type="email" class="form-control" id="emailInput" required>
+                            <label for="payuEmail" class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" id="payuEmail" required>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Nombre completo</label>
-                            <input type="text" class="form-control" id="fullNameInput" required>
+                            <label for="payuFullName" class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control" id="payuFullName" required>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="tel" class="form-control" id="phoneInput" required>
+                            <label for="payuPhone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="payuPhone" required>
                         </div>
                         
                         <button type="submit" class="btn btn-primary">Proceder al pago</button>
@@ -1442,12 +1442,12 @@
             }
             
             const formData = {
-                        nombre: document.getElementById('nombre').value,
-                        apellido: document.getElementById('apellido').value,
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value,
-                        telefono: document.getElementById('telefono').value,
-                direccion: document.getElementById('direccion').value
+                        nombre: document.getElementById('registroNombre').value,
+                        apellido: document.getElementById('registroApellido').value,
+                        email: document.getElementById('registroEmail').value,
+                        password: document.getElementById('registroPassword').value,
+                        telefono: document.getElementById('registroTelefono').value,
+                direccion: document.getElementById('registroDireccion').value
             };
 
             try {
@@ -1616,7 +1616,7 @@
 
         // Función para verificar aceptación de políticas
         function verificarPoliticas() {
-            const aceptaPoliticas = document.getElementById('aceptaPoliticas');
+            const aceptaPoliticas = document.getElementById('registroAceptaPoliticas');
             if (!aceptaPoliticas.checked) {
                 alert('Debe aceptar las políticas de uso y privacidad para continuar');
                 return false;
@@ -1664,9 +1664,9 @@
             const referenceCode = 'DON-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             
             // Actualizar campos del formulario PayU
-            document.getElementById('referenceCode').value = referenceCode;
+            document.getElementById('payuReferenceCode').value = referenceCode;
             document.getElementById('payuAmount').value = monto;
-            document.getElementById('buyerEmail').value = document.getElementById('emailInput').value;
+            document.getElementById('payuBuyerEmail').value = document.getElementById('payuEmail').value;
             
             // Calcular firma
             const signature = calcularFirmaPayU(referenceCode, monto, 'COP');
@@ -1922,13 +1922,13 @@
                 // Construir query string
                 const params = new URLSearchParams();
                 if (estado) params.append('estado', estado);
-                if (busqueda) params.append('numeroFactura', busqueda);
+                if (busqueda) params.append('busqueda', busqueda);
                 if (fechaDesde) params.append('fechaDesde', fechaDesde);
                 if (fechaHasta) params.append('fechaHasta', fechaHasta);
                 if (consumoMin) params.append('consumoMin', consumoMin);
                 if (consumoMax) params.append('consumoMax', consumoMax);
 
-                const response = await fetch(`/facturas?${params.toString()}`, {
+                const response = await fetch(`/facturas/filtrar?${params.toString()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -1939,46 +1939,49 @@
                 }
 
                 const data = await response.json();
-                console.log('Facturas filtradas:', data);
-
+                
                 // Actualizar la tabla
                 const tbody = document.getElementById('facturasTableBody');
                 tbody.innerHTML = '';
 
-                data.facturas.forEach(factura => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>${factura.numeroFactura}</td>
-                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                        <td>${factura.consumo.consumoTotal} m³</td>
-                        <td>$${factura.valores.total.toLocaleString()}</td>
-                        <td>
-                            <span class="badge bg-${getEstadoColor(factura.estado)}">
-                                ${factura.estado}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                if (data.facturas && data.facturas.length > 0) {
+                    data.facturas.forEach(factura => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${factura.numeroFactura}</td>
+                            <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                            <td>${factura.consumo.consumoTotal} m³</td>
+                            <td>$${factura.valores.total.toLocaleString()}</td>
+                            <td>
+                                <span class="badge bg-${getEstadoColor(factura.estado)}">
+                                    ${factura.estado}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron facturas</td></tr>';
+                }
 
                 // Actualizar información de paginación
-                document.getElementById('itemsShowing').textContent = data.facturas.length;
-                document.getElementById('totalItems').textContent = data.total;
-
-                // Actualizar paginación
-                actualizarPaginacion(data.paginaActual, data.totalPaginas);
+                if (data.paginacion) {
+                    document.getElementById('itemsShowing').textContent = data.facturas.length;
+                    document.getElementById('totalItems').textContent = data.paginacion.total;
+                    actualizarPaginacion(data.paginacion.paginaActual, data.paginacion.totalPaginas);
+                }
 
             } catch (error) {
                 console.error('Error al filtrar facturas:', error);
-                alert('Error al filtrar las facturas');
+                mostrarMensaje('Error al filtrar las facturas', true);
             }
         }
 
@@ -1999,6 +2002,8 @@
         // Función para actualizar la paginación
         function actualizarPaginacion(paginaActual, totalPaginas) {
             const pagination = document.getElementById('pagination');
+            if (!pagination) return;
+            
             pagination.innerHTML = '';
 
             // Botón anterior
@@ -2009,7 +2014,15 @@
             pagination.appendChild(prevButton);
 
             // Números de página
-            for (let i = 1; i <= totalPaginas; i++) {
+            const maxPages = 5;
+            let startPage = Math.max(1, paginaActual - Math.floor(maxPages / 2));
+            let endPage = Math.min(totalPaginas, startPage + maxPages - 1);
+
+            if (endPage - startPage + 1 < maxPages) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
                 const pageButton = document.createElement('button');
                 pageButton.className = `btn btn-outline-primary ${i === paginaActual ? 'active' : ''}`;
                 pageButton.textContent = i;
@@ -2026,10 +2039,95 @@
         }
 
         // Función para cambiar de página
-        function cambiarPagina(nuevaPagina) {
-            const params = new URLSearchParams(window.location.search);
-            params.set('page', nuevaPagina);
-            window.location.search = params.toString();
+        async function cambiarPagina(nuevaPagina) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const estado = document.getElementById('filterEstado').value;
+            const busqueda = document.getElementById('searchFactura').value;
+            const fechaDesde = document.getElementById('fechaDesde')?.value;
+            const fechaHasta = document.getElementById('fechaHasta')?.value;
+            const consumoMin = document.getElementById('consumoMin')?.value;
+            const consumoMax = document.getElementById('consumoMax')?.value;
+
+            try {
+                const params = new URLSearchParams();
+                params.append('pagina', nuevaPagina);
+                if (estado) params.append('estado', estado);
+                if (busqueda) params.append('busqueda', busqueda);
+                if (fechaDesde) params.append('fechaDesde', fechaDesde);
+                if (fechaHasta) params.append('fechaHasta', fechaHasta);
+                if (consumoMin) params.append('consumoMin', consumoMin);
+                if (consumoMax) params.append('consumoMax', consumoMax);
+
+                const response = await fetch(`/facturas/filtrar?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Actualizar la tabla
+                const tbody = document.getElementById('facturasTableBody');
+                tbody.innerHTML = '';
+
+                if (data.facturas && data.facturas.length > 0) {
+                    data.facturas.forEach(factura => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${factura.numeroFactura}</td>
+                            <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                            <td>${factura.consumo.consumoTotal} m³</td>
+                            <td>$${factura.valores.total.toLocaleString()}</td>
+                            <td>
+                                <span class="badge bg-${getEstadoColor(factura.estado)}">
+                                    ${factura.estado}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron facturas</td></tr>';
+                }
+
+                // Actualizar paginación
+                if (data.paginacion) {
+                    document.getElementById('itemsShowing').textContent = data.facturas.length;
+                    document.getElementById('totalItems').textContent = data.paginacion.total;
+                    actualizarPaginacion(data.paginacion.paginaActual, data.paginacion.totalPaginas);
+                }
+
+            } catch (error) {
+                console.error('Error al cambiar de página:', error);
+                mostrarMensaje('Error al cambiar de página', true);
+            }
+        }
+
+        // Función para mostrar mensajes
+        function mostrarMensaje(mensaje, esError = false) {
+            const alertaFacturas = document.getElementById('alertaFacturas');
+            const alertaFacturasBody = document.getElementById('alertaFacturasBody');
+            
+            alertaFacturasBody.innerHTML = mensaje;
+            alertaFacturas.classList.remove('bg-success', 'bg-danger');
+            alertaFacturas.classList.add(esError ? 'bg-danger' : 'bg-success');
+            
+            const toast = new bootstrap.Toast(alertaFacturas);
+            toast.show();
         }
 
         // Agregar event listeners para los filtros
