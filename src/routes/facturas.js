@@ -6,7 +6,6 @@ const { validarFactura } = require('../middleware/validator');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const facturaController = require('../controllers/facturaController');
-const rateLimit = require('express-rate-limit');
 const { body, query } = require('express-validator');
 
 // Configuración de Cloudinary
@@ -16,11 +15,18 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configuración de rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100 // límite de 100 peticiones por ventana
-});
+// Configuración de rate limiting (opcional)
+let limiter;
+try {
+    const rateLimit = require('express-rate-limit');
+    limiter = rateLimit({
+        windowMs: 15 * 60 * 1000, // 15 minutos
+        max: 100 // límite de 100 peticiones por ventana
+    });
+} catch (error) {
+    console.warn('express-rate-limit no está instalado. El rate limiting está deshabilitado.');
+    limiter = (req, res, next) => next();
+}
 
 // Configuración de Multer para subida de imágenes
 const storage = multer.memoryStorage();
