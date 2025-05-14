@@ -11,6 +11,7 @@ const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const politicasRoutes = require('./routes/politicas');
+const analisisRoutes = require('./routes/analisis');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -31,6 +32,8 @@ app.use('/auth', authRoutes);
 app.use('/facturas', facturasRoutes);
 // Rutas de políticas
 app.use('/politicas', politicasRoutes);
+// rutas de analisis
+app.use('/analisis', analisisRoutes);
 
 // Rutas
 app.get('/', async (req, res) => {

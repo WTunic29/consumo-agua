@@ -31,6 +31,14 @@ Aplicación web para visualizar y analizar el consumo de agua en diferentes muni
 - 🔍 Filtrado y búsqueda de facturas
 - ⚡ Validación de permisos en tiempo real
 
+### Análisis de Consumo
+- 📊 Gráficos de tendencia de consumo
+- 📈 Comparación con promedios históricos
+- 🔮 Predicción de consumo futuro
+- ⚠️ Alertas de consumo elevado
+- 📋 Reportes mensuales detallados
+- 🔔 Sistema de recordatorios personalizados
+
 ### Sostenibilidad y Donaciones
 - 💚 Sistema de donaciones
 - ⭐ Planes de membresía
@@ -48,6 +56,7 @@ Aplicación web para visualizar y analizar el consumo de agua en diferentes muni
 - Bootstrap 5
 - JWT (JSON Web Tokens)
 - bcrypt
+- Regression (para predicciones)
 
 ## Requisitos Previos
 
@@ -73,6 +82,9 @@ npm install
 MONGODB_URI=mongodb://localhost:27017/consumo_agua
 PORT=3000
 JWT_SECRET=tu_clave_secreta_aqui
+CLOUDINARY_CLOUD_NAME=tu_cloud_name
+CLOUDINARY_API_KEY=tu_api_key
+CLOUDINARY_API_SECRET=tu_api_secret
 ```
 
 4. Iniciar la aplicación:
@@ -101,7 +113,8 @@ proyecto/
 │   ├── routes/
 │   │   ├── auth.js        # Rutas de autenticación
 │   │   ├── facturas.js    # Rutas de facturas
-│   │   └── politicas.js   # Rutas de políticas
+│   │   ├── politicas.js   # Rutas de políticas
+│   │   └── analisis.js    # Rutas de análisis
 │   ├── views/
 │   │   ├── index.ejs      # Vista principal
 │   │   ├── politicas.ejs  # Políticas de uso
@@ -124,6 +137,12 @@ proyecto/
 - POST `/facturas` - Crear nueva factura
 - PUT `/facturas/:id` - Actualizar factura
 - DELETE `/facturas/:id` - Eliminar factura
+
+### Análisis
+- GET `/analisis/consumo` - Obtener análisis de consumo
+- GET `/analisis/reporte-mensual` - Obtener reporte mensual
+- GET `/analisis/recordatorios` - Obtener recordatorios
+- PUT `/analisis/recordatorios/:id/leido` - Marcar recordatorio como leído
 
 ### Políticas
 - GET `/politicas` - Ver políticas de uso y privacidad
