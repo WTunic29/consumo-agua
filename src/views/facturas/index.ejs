@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facturas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .factura-vencida {
+            background-color: #fff3f3;
+            border-left: 4px solid #dc3545;
+        }
+        .factura-mora {
+            background-color: #ffe6e6;
+            border-left: 4px solid #dc3545;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+        .estado-badge {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .membresia-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .membresia-card:hover {
+            transform: translateY(-5px);
+        }
+        .membresia-premium {
+            background: linear-gradient(135deg, #ffd700, #ffa500);
+            color: white;
+        }
+        .membresia-vip {
+            background: linear-gradient(135deg, #4b0082, #800080);
+            color: white;
+        }
+        .beneficio-item {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            background-color: rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Sección de Membresía -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card membresia-card <%= membresia.tipo %>">
+                    <div class="card-body">
+                        <h5 class="card-title">Tu Membresía: <%= membresia.tipo.toUpperCase() %></h5>
+                        <p class="card-text">
+                            Racha de pagos: <%= rachaPagos %> meses<br>
+                            Puntos totales: <%= puntosTotales %>
+                        </p>
+                        <% if (membresia.beneficios && membresia.beneficios.length > 0) { %>
+                            <h6>Beneficios activos:</h6>
+                            <% membresia.beneficios.forEach(beneficio => { %>
+                                <div class="beneficio-item">
+                                    <%= beneficio.descripcion %>
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Próximos beneficios</h5>
+                        <div class="progress mb-3">
+                            <div class="progress-bar" role="progressbar" 
+                                 style="width: <%= (rachaPagos / 12) * 100 %>%" 
+                                 aria-valuenow="<%= rachaPagos %>" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="12">
+                                <%= rachaPagos %>/12 pagos
+                            </div>
+                        </div>
+                        <p class="card-text">
+                            <% if (rachaPagos < 3) { %>
+                                ¡Faltan <%= 3 - rachaPagos %> pagos puntuales para obtener 5% de descuento!
+                            <% } else if (rachaPagos < 6) { %>
+                                ¡Faltan <%= 6 - rachaPagos %> pagos puntuales para obtener membresía Premium!
+                            <% } else if (rachaPagos < 12) { %>
+                                ¡Faltan <%= 12 - rachaPagos %> pagos puntuales para obtener membresía VIP!
+                            <% } else { %>
+                                ¡Felicidades! Has alcanzado el máximo nivel de beneficios.
+                            <% } %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h1 class="mb-4">Mis Facturas</h1>
+        
+        <% if (facturas && facturas.length > 0) { %>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha Emisión</th>
+                            <th>Fecha Vencimiento</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Días Mora</th>
+                            <th>Beneficios</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% facturas.forEach(factura => { %>
+                            <tr class="<%= factura.estado === 'vencida' ? 'factura-vencida' : '' %> <%= factura.estado === 'mora' ? 'factura-mora' : '' %>">
+                                <td><%= factura.numeroFactura %></td>
+                                <td><%= new Date(factura.fechaEmision).toLocaleDateString() %></td>
+                                <td><%= new Date(factura.fechaVencimiento).toLocaleDateString() %></td>
+                                <td>$<%= factura.monto.toLocaleString() %></td>
+                                <td>
+                                    <span class="badge <%= 
+                                        factura.estado === 'pagada' ? 'bg-success' : 
+                                        factura.estado === 'vencida' ? 'bg-warning' : 
+                                        factura.estado === 'mora' ? 'bg-danger' : 
+                                        'bg-primary' %> estado-badge">
+                                        <%= factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1) %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <% if (factura.diasMora > 0) { %>
+                                        <span class="text-danger"><%= factura.diasMora %> días</span>
+                                    <% } else { %>
+                                        -
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (factura.beneficios) { %>
+                                        <% if (factura.beneficios.puntosGanados > 0) { %>
+                                            <span class="badge bg-info">
+                                                +<%= factura.beneficios.puntosGanados %> puntos
+                                            </span>
+                                        <% } %>
+                                        <% if (factura.beneficios.descuentoAplicado > 0) { %>
+                                            <span class="badge bg-success">
+                                                <%= factura.beneficios.descuentoAplicado * 100 %>% descuento
+                                            </span>
+                                        <% } %>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/facturas/<%= factura._id %>" class="btn btn-sm btn-info">Ver</a>
+                                    <% if (factura.estado !== 'pagada') { %>
+                                        <a href="/facturas/<%= factura._id %>/pagar" class="btn btn-sm btn-success">Pagar</a>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        <% } else { %>
+            <div class="alert alert-info">
+                No tienes facturas registradas.
+            </div>
+        <% } %>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

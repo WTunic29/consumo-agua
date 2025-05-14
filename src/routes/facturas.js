@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const { validarFactura } = require('../middleware/validator');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
+const facturaController = require('../controllers/facturaController');
 
 // Configuración de Cloudinary
 cloudinary.config({
@@ -17,25 +18,14 @@ cloudinary.config({
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
+// Rutas protegidas que requieren autenticación
+router.use(auth);
+
 // Obtener todas las facturas del usuario
-router.get('/', auth, async (req, res) => {
-    try {
-        console.log('Buscando facturas para usuario:', req.user._id);
-        const facturas = await Factura.find({ usuario: req.user._id })
-            .sort({ fechaEmision: -1 });
-        console.log('Facturas encontradas:', facturas.length);
-        res.json(facturas);
-    } catch (error) {
-        console.error('Error al obtener facturas:', error);
-        res.status(500).json({ 
-            error: 'Error al obtener facturas',
-            detalles: error.message 
-        });
-    }
-});
+router.get('/', facturaController.getFacturas);
 
 // Obtener facturas con paginación y filtros
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -73,7 +63,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Crear factura con imagen
-router.post('/', auth, upload.single('imagen'), validarFactura, async (req, res) => {
+router.post('/', upload.single('imagen'), validarFactura, async (req, res) => {
     try {
         const facturaData = {
             usuario: req.user._id,
@@ -108,28 +98,17 @@ router.post('/', auth, upload.single('imagen'), validarFactura, async (req, res)
     }
 });
 
-// Obtener una factura específica
-router.get('/:id', auth, async (req, res) => {
-    try {
-        const factura = await Factura.findOne({
-            _id: req.params.id,
-            usuario: req.user._id
-        });
-        if (!factura) {
-            return res.status(404).json({ error: 'Factura no encontrada' });
-        }
-        res.json(factura);
-    } catch (error) {
-        console.error('Error al obtener la factura:', error);
-        res.status(500).json({ 
-            error: 'Error al obtener la factura',
-            detalles: error.message 
-        });
-    }
-});
+// Ver detalle de una factura
+router.get('/:id', facturaController.getFactura);
+
+// Mostrar formulario de pago
+router.get('/:id/pagar', facturaController.mostrarFormularioPago);
+
+// Procesar pago de factura
+router.post('/:id/pagar', facturaController.procesarPago);
 
 // Actualizar factura
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
     try {
         const factura = await Factura.findOneAndUpdate(
             { 
@@ -155,7 +134,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Eliminar factura
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
         const factura = await Factura.findOneAndDelete({
             _id: req.params.id,
