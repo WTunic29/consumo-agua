@@ -1,0 +1,260 @@
+<!-- Componente de anuncios -->
+<div class="anuncios-container" data-ubicacion="<%= ubicacion %>">
+    <!-- Anuncios internos -->
+    <div class="anuncios-carousel">
+        <!-- Los anuncios se cargarán dinámicamente aquí -->
+    </div>
+
+    <!-- Google AdSense -->
+    <div class="adsense-container">
+        <div class="adsense-header">
+            <h5>Anuncios Responsables</h5>
+            <p class="adsense-description">
+                Nos comprometemos a mostrar solo anuncios relacionados con sostenibilidad y medio ambiente
+            </p>
+        </div>
+        
+        <% if (ubicacion === 'header') { %>
+            <!-- Anuncio horizontal superior -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-TU_ID_DE_PUBLISHER"
+                 data-ad-slot="TU_ID_DE_ANUNCIO"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"
+                 data-ad-keywords="agua, sostenibilidad, medio ambiente, ecología, reciclaje, energía renovable, conservación, naturaleza, cambio climático, consumo responsable"></ins>
+        <% } else if (ubicacion === 'sidebar') { %>
+            <!-- Anuncio vertical lateral -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-TU_ID_DE_PUBLISHER"
+                 data-ad-slot="TU_ID_DE_ANUNCIO"
+                 data-ad-format="vertical"
+                 data-full-width-responsive="true"
+                 data-ad-keywords="agua, sostenibilidad, medio ambiente, ecología, reciclaje, energía renovable, conservación, naturaleza, cambio climático, consumo responsable"></ins>
+        <% } else if (ubicacion === 'content') { %>
+            <!-- Anuncio en contenido -->
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-TU_ID_DE_PUBLISHER"
+                 data-ad-slot="TU_ID_DE_ANUNCIO"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"
+                 data-ad-keywords="agua, sostenibilidad, medio ambiente, ecología, reciclaje, energía renovable, conservación, naturaleza, cambio climático, consumo responsable"></ins>
+        <% } %>
+    </div>
+</div>
+
+<style>
+.anuncios-container {
+    width: 100%;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.anuncio-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 0.5rem;
+    padding: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.anuncio-card:hover {
+    transform: translateY(-5px);
+}
+
+.anuncio-imagen {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.anuncio-titulo {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.anuncio-contenido {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.anuncio-tipo {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+
+.anuncio-tipo.promocion {
+    background: #ffd700;
+    color: #000;
+}
+
+.anuncio-tipo.noticia {
+    background: #4CAF50;
+    color: #fff;
+}
+
+.anuncio-tipo.evento {
+    background: #2196F3;
+    color: #fff;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .anuncio-card {
+        margin: 0.25rem;
+        padding: 0.75rem;
+    }
+
+    .anuncio-imagen {
+        height: 150px;
+    }
+
+    .anuncio-titulo {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .anuncio-imagen {
+        height: 120px;
+    }
+}
+
+.adsense-container {
+    margin: 1rem 0;
+    text-align: center;
+    min-height: 100px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.adsense-header {
+    margin-bottom: 1rem;
+}
+
+.adsense-header h5 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.adsense-description {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+/* Estilos responsivos */
+@media (max-width: 768px) {
+    .adsense-container {
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+    }
+    
+    .adsense-description {
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.querySelector('.anuncios-container');
+    const ubicacion = container.dataset.ubicacion;
+    
+    // Cargar anuncios
+    fetch(`/api/anuncios/${ubicacion}`)
+        .then(response => response.json())
+        .then(anuncios => {
+            const carousel = container.querySelector('.anuncios-carousel');
+            
+            anuncios.forEach(anuncio => {
+                const card = document.createElement('div');
+                card.className = 'anuncio-card';
+                
+                // Aplicar estilos personalizados si existen
+                if (anuncio.estilos) {
+                    if (anuncio.estilos.backgroundColor) {
+                        card.style.backgroundColor = anuncio.estilos.backgroundColor;
+                    }
+                    if (anuncio.estilos.textColor) {
+                        card.style.color = anuncio.estilos.textColor;
+                    }
+                    if (anuncio.estilos.customClass) {
+                        card.classList.add(anuncio.estilos.customClass);
+                    }
+                }
+                
+                // Construir el contenido del anuncio
+                let contenido = '';
+                
+                if (anuncio.imagen && anuncio.imagen.url) {
+                    contenido += `
+                        <img src="${anuncio.imagen.url}" 
+                             alt="${anuncio.imagen.alt || anuncio.titulo}" 
+                             class="anuncio-imagen">
+                    `;
+                }
+                
+                contenido += `
+                    <span class="anuncio-tipo ${anuncio.tipo}">${anuncio.tipo}</span>
+                    <h3 class="anuncio-titulo">${anuncio.titulo}</h3>
+                    <p class="anuncio-contenido">${anuncio.contenido}</p>
+                `;
+                
+                card.innerHTML = contenido;
+                
+                // Registrar click
+                card.addEventListener('click', () => {
+                    fetch(`/api/anuncios/${anuncio._id}/click`, {
+                        method: 'POST'
+                    });
+                });
+                
+                carousel.appendChild(card);
+            });
+            
+            // Inicializar carrusel si hay más de un anuncio
+            if (anuncios.length > 1) {
+                let currentIndex = 0;
+                const cards = carousel.querySelectorAll('.anuncio-card');
+                
+                setInterval(() => {
+                    cards[currentIndex].style.display = 'none';
+                    currentIndex = (currentIndex + 1) % cards.length;
+                    cards[currentIndex].style.display = 'block';
+                }, 5000); // Cambiar cada 5 segundos
+            }
+        })
+        .catch(error => console.error('Error al cargar anuncios:', error));
+});
+
+// Script para Google AdSense
+(function() {
+    // Cargar el script de AdSense
+    const script = document.createElement('script');
+    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+    script.async = true;
+    document.head.appendChild(script);
+
+    // Inicializar anuncios cuando el script esté cargado
+    script.onload = function() {
+        try {
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        } catch (error) {
+            console.error('Error al inicializar AdSense:', error);
+        }
+    };
+})();
+</script> 

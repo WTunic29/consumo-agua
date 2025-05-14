@@ -155,6 +155,20 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// Exportar facturas
+router.get('/exportar/pdf', facturaController.exportarPDF);
+router.get('/exportar/excel', facturaController.exportarExcel);
+
+// Obtener estadísticas
+router.get('/estadisticas', async (req, res) => {
+    try {
+        const estadisticas = await facturaController.calcularEstadisticas(req.user._id);
+        res.json(estadisticas);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener estadísticas' });
+    }
+});
+
 // Sistema de notificaciones
 async function enviarNotificacion(usuarioId, titulo, mensaje) {
     try {
