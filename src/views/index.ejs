@@ -431,16 +431,37 @@
 
         <!-- Tabla de Facturas -->
         <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Mis Facturas</h5>
-                <div>
-                    <select class="form-select me-2" id="estadoFactura" onchange="filtrarFacturas()">
-                        <option value="">Todos los estados</option>
-                        <option value="pendiente">Pendiente</option>
-                        <option value="pagada">Pagada</option>
-                        <option value="vencida">Vencida</option>
-                    </select>
-                    <button class="btn btn-primary" onclick="showNuevaFacturaModal()">Nueva Factura</button>
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h5 class="card-title mb-0">Mis Facturas</h5>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="searchFactura" placeholder="Buscar factura...">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="filterEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagada">Pagada</option>
+                            <option value="vencida">Vencida</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" class="form-control" id="fechaDesde" placeholder="Desde">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" class="form-control" id="fechaHasta" placeholder="Hasta">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="consumoMin" placeholder="Consumo min">
+                            <input type="number" class="form-control" id="consumoMax" placeholder="Consumo max">
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <button class="btn btn-primary" onclick="showNuevaFacturaModal()">Nueva Factura</button>
+                    </div>
                 </div>
             </div>
             <div class="card-body">
@@ -477,8 +498,40 @@
             </div>
         </div>
 
+        <!-- Sección de Análisis y Alertas -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Análisis de Consumo</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="consumoStats">
+                            <div class="alert alert-info">
+                                <i class="fas fa-chart-line"></i> Cargando análisis...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Alertas y Recordatorios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="alertasContainer">
+                            <div class="alert alert-info">
+                                <i class="fas fa-bell"></i> Cargando alertas...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Sección de Sostenibilidad -->
-        <div class="card mb-4">
+        <div class="card mb-4 mt-4">
             <div class="card-body">
                 <h5 class="card-title">
                     <i class="bi bi-heart-fill text-danger"></i>
@@ -598,38 +651,6 @@
                         </div>
                         <div id="anunciosContainer" class="row">
                             <!-- Los anuncios se cargarán dinámicamente aquí -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección de Análisis y Alertas -->
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Análisis de Consumo</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="consumoStats">
-                            <div class="alert alert-info">
-                                <i class="fas fa-chart-line"></i> Cargando análisis...
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Alertas y Recordatorios</h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="alertasContainer">
-                            <div class="alert alert-info">
-                                <i class="fas fa-bell"></i> Cargando alertas...
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1884,6 +1905,162 @@
             cargarAnalisisConsumo();
             cargarAlertas();
         });
+
+        // Función para filtrar facturas
+        async function filtrarFacturas() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const estado = document.getElementById('filterEstado').value;
+            const busqueda = document.getElementById('searchFactura').value;
+            const fechaDesde = document.getElementById('fechaDesde')?.value;
+            const fechaHasta = document.getElementById('fechaHasta')?.value;
+            const consumoMin = document.getElementById('consumoMin')?.value;
+            const consumoMax = document.getElementById('consumoMax')?.value;
+
+            try {
+                // Construir query string
+                const params = new URLSearchParams();
+                if (estado) params.append('estado', estado);
+                if (busqueda) params.append('numeroFactura', busqueda);
+                if (fechaDesde) params.append('fechaDesde', fechaDesde);
+                if (fechaHasta) params.append('fechaHasta', fechaHasta);
+                if (consumoMin) params.append('consumoMin', consumoMin);
+                if (consumoMax) params.append('consumoMax', consumoMax);
+
+                const response = await fetch(`/facturas?${params.toString()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Facturas filtradas:', data);
+
+                // Actualizar la tabla
+                const tbody = document.getElementById('facturasTableBody');
+                tbody.innerHTML = '';
+
+                data.facturas.forEach(factura => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${factura.numeroFactura}</td>
+                        <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                        <td>${factura.consumo.consumoTotal} m³</td>
+                        <td>$${factura.valores.total.toLocaleString()}</td>
+                        <td>
+                            <span class="badge bg-${getEstadoColor(factura.estado)}">
+                                ${factura.estado}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                // Actualizar información de paginación
+                document.getElementById('itemsShowing').textContent = data.facturas.length;
+                document.getElementById('totalItems').textContent = data.total;
+
+                // Actualizar paginación
+                actualizarPaginacion(data.paginaActual, data.totalPaginas);
+
+            } catch (error) {
+                console.error('Error al filtrar facturas:', error);
+                alert('Error al filtrar las facturas');
+            }
+        }
+
+        // Función para obtener el color del estado
+        function getEstadoColor(estado) {
+            switch (estado.toLowerCase()) {
+                case 'pagada':
+                    return 'success';
+                case 'pendiente':
+                    return 'warning';
+                case 'vencida':
+                    return 'danger';
+                default:
+                    return 'secondary';
+            }
+        }
+
+        // Función para actualizar la paginación
+        function actualizarPaginacion(paginaActual, totalPaginas) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            // Botón anterior
+            const prevButton = document.createElement('button');
+            prevButton.className = `btn btn-outline-primary ${paginaActual === 1 ? 'disabled' : ''}`;
+            prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            prevButton.onclick = () => cambiarPagina(paginaActual - 1);
+            pagination.appendChild(prevButton);
+
+            // Números de página
+            for (let i = 1; i <= totalPaginas; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `btn btn-outline-primary ${i === paginaActual ? 'active' : ''}`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => cambiarPagina(i);
+                pagination.appendChild(pageButton);
+            }
+
+            // Botón siguiente
+            const nextButton = document.createElement('button');
+            nextButton.className = `btn btn-outline-primary ${paginaActual === totalPaginas ? 'disabled' : ''}`;
+            nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            nextButton.onclick = () => cambiarPagina(paginaActual + 1);
+            pagination.appendChild(nextButton);
+        }
+
+        // Función para cambiar de página
+        function cambiarPagina(nuevaPagina) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', nuevaPagina);
+            window.location.search = params.toString();
+        }
+
+        // Agregar event listeners para los filtros
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterEstado = document.getElementById('filterEstado');
+            const searchFactura = document.getElementById('searchFactura');
+            const fechaDesde = document.getElementById('fechaDesde');
+            const fechaHasta = document.getElementById('fechaHasta');
+            const consumoMin = document.getElementById('consumoMin');
+            const consumoMax = document.getElementById('consumoMax');
+
+            if (filterEstado) filterEstado.addEventListener('change', filtrarFacturas);
+            if (searchFactura) searchFactura.addEventListener('input', debounce(filtrarFacturas, 500));
+            if (fechaDesde) fechaDesde.addEventListener('change', filtrarFacturas);
+            if (fechaHasta) fechaHasta.addEventListener('change', filtrarFacturas);
+            if (consumoMin) consumoMin.addEventListener('change', filtrarFacturas);
+            if (consumoMax) consumoMax.addEventListener('change', filtrarFacturas);
+        });
+
+        // Función debounce para evitar múltiples llamadas
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
     </script>
 </body>

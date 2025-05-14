@@ -43,10 +43,40 @@ router.get('/', auth, async (req, res) => {
 
         // Construir filtros
         const filtros = { usuario: req.user._id };
-        if (req.query.estado) filtros.estado = req.query.estado;
-        if (req.query.fechaDesde) filtros.fechaEmision = { $gte: new Date(req.query.fechaDesde) };
-        if (req.query.fechaHasta) filtros.fechaEmision = { ...filtros.fechaEmision, $lte: new Date(req.query.fechaHasta) };
-        if (req.query.numeroFactura) filtros.numeroFactura = new RegExp(req.query.numeroFactura, 'i');
+        
+        // Filtro por estado
+        if (req.query.estado) {
+            filtros.estado = req.query.estado;
+        }
+
+        // Filtro por fechas
+        if (req.query.fechaDesde || req.query.fechaHasta) {
+            filtros.fechaEmision = {};
+            if (req.query.fechaDesde) {
+                filtros.fechaEmision.$gte = new Date(req.query.fechaDesde);
+            }
+            if (req.query.fechaHasta) {
+                filtros.fechaEmision.$lte = new Date(req.query.fechaHasta);
+            }
+        }
+
+        // Filtro por número de factura
+        if (req.query.numeroFactura) {
+            filtros.numeroFactura = new RegExp(req.query.numeroFactura, 'i');
+        }
+
+        // Filtro por rango de consumo
+        if (req.query.consumoMin || req.query.consumoMax) {
+            filtros['consumo.consumoTotal'] = {};
+            if (req.query.consumoMin) {
+                filtros['consumo.consumoTotal'].$gte = parseFloat(req.query.consumoMin);
+            }
+            if (req.query.consumoMax) {
+                filtros['consumo.consumoTotal'].$lte = parseFloat(req.query.consumoMax);
+            }
+        }
+
+        console.log('Filtros aplicados:', filtros);
 
         // Obtener facturas
         const facturas = await Factura.find(filtros)
