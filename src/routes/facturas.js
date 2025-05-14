@@ -60,9 +60,9 @@ router.get('/', auth, async (req, res) => {
             }
         }
 
-        // Filtro por número de factura
-        if (req.query.numeroFactura) {
-            filtros.numeroFactura = new RegExp(req.query.numeroFactura, 'i');
+        // Filtro por búsqueda (número de factura)
+        if (req.query.busqueda) {
+            filtros.numeroFactura = new RegExp(req.query.busqueda, 'i');
         }
 
         // Filtro por rango de consumo
@@ -89,9 +89,11 @@ router.get('/', auth, async (req, res) => {
 
         res.json({
             facturas,
-            total,
-            totalPaginas: Math.ceil(total / limit),
-            paginaActual: page
+            paginacion: {
+                total,
+                paginaActual: page,
+                totalPaginas: Math.ceil(total / limit)
+            }
         });
     } catch (error) {
         console.error('Error al obtener facturas:', error);

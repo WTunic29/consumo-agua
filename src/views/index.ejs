@@ -1928,7 +1928,7 @@
                 if (consumoMin) params.append('consumoMin', consumoMin);
                 if (consumoMax) params.append('consumoMax', consumoMax);
 
-                const response = await fetch(`/facturas/filtrar?${params.toString()}`, {
+                const response = await fetch(`/facturas?${params.toString()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -2060,7 +2060,7 @@
                 if (consumoMin) params.append('consumoMin', consumoMin);
                 if (consumoMax) params.append('consumoMax', consumoMax);
 
-                const response = await fetch(`/facturas/filtrar?${params.toString()}`, {
+                const response = await fetch(`/facturas?${params.toString()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
