@@ -1,187 +1,108 @@
-# Sistema de Registro de Consumo de Agua
+# Sistema de Pagos y Consumo de Agua con Bases de Datos Separadas
 
-Aplicación web para visualizar y analizar el consumo de agua en diferentes municipios (Bogotá, Soacha y Gachancipá), con sistema de autenticación y gestión de facturas personales.
+Este sistema integra donaciones, membresías y gestión de consumo de agua, utilizando **dos bases de datos independientes**:
+- Una base de datos para pagos (donaciones y membresías)
+- Otra base de datos para facturación y estadísticas de consumo de agua
 
 ## Características
 
-### Visualización de Datos
-- 📊 Visualización de datos históricos de consumo
-- 📈 Gráficos interactivos de tendencias
-- 🗺️ Mapa interactivo de sectores
-- 📱 Diseño responsivo
-- 🌓 Modo claro/oscuro
-- 📊 Análisis comparativo entre municipios
-- 📈 Proyecciones de consumo futuro
-- 📊 Cálculo de variaciones porcentuales
+- Sistema de donaciones (únicas y mensuales)
+- Sistema de membresías (básica, pro y business)
+- Gestión de facturas y estadísticas de consumo de agua
+- Integración con Nu Colombia (transferencia bancaria)
+- Notificaciones por correo electrónico
+- Autenticación JWT
+- Manejo de webhooks
+- **Separación de datos para mayor seguridad y organización**
 
-### Sistema de Usuarios
-- 👤 Registro de usuarios
-- 🔐 Autenticación segura
-- ✅ Validación de políticas de uso
-- 👥 Perfiles de usuario personalizados
-- 🔄 Gestión de sesión mejorada
-- 🎯 Navegación intuitiva según estado de autenticación
-- 🔒 Protección de funcionalidades según nivel de acceso
+## Requisitos
 
-### Gestión de Facturas
-- 📝 Registro manual de facturas (requiere autenticación)
-- 📋 Visualización de facturas personales
-- ✏️ Edición de facturas
-- 🗑️ Eliminación de facturas
-- 🔍 Filtrado y búsqueda de facturas
-- ⚡ Validación de permisos en tiempo real
-
-### Sostenibilidad y Donaciones
-- 💚 Sistema de donaciones
-- ⭐ Planes de membresía
-- 📢 Anuncios responsables
-- 💧 Métricas de sostenibilidad
-
-## Tecnologías Utilizadas
-
-- Node.js
-- Express
-- MongoDB
-- EJS (Template Engine)
-- Chart.js
-- Leaflet.js
-- Bootstrap 5
-- JWT (JSON Web Tokens)
-- bcrypt
-
-## Requisitos Previos
-
-- Node.js (v14 o superior)
-- MongoDB
-- npm o yarn
+- Node.js >= 14.x
+- MongoDB >= 4.x
+- Cuenta de Nu Colombia (personal)
 
 ## Instalación
 
-1. Clonar el repositorio:
+1. Clona el repositorio:
 ```bash
-git clone [URL_DEL_REPOSITORIO]
-cd proyecto
+git clone <url-del-repositorio>
+cd sistema-pagos
 ```
 
-2. Instalar dependencias:
+2. Instala dependencias:
 ```bash
 npm install
 ```
 
-3. Crear archivo .env en la raíz del proyecto:
+3. Configura las variables de entorno en un archivo `.env`:
 ```env
-MONGODB_URI=mongodb://localhost:27017/consumo_agua
+# Base de datos de pagos (donaciones y membresías)
+MONGODB_URI=mongodb://localhost:27017/sistema-pagos
+
+# Base de datos de acueducto (facturación y estadísticas)
+MONGODB_URI_ACUEDUCTO=mongodb://localhost:27017/AcueductoDB
+
+# Configuración del servidor
 PORT=3000
-JWT_SECRET=tu_clave_secreta_aqui
+NODE_ENV=development
+BASE_URL=http://localhost:3000
+
+# Configuración de JWT
+JWT_SECRET=tu_clave_secreta_jwt
+
+# Configuración de Nu (Cuenta Personal)
+NU_ACCOUNT_NUMBER=tu_numero_de_cuenta_nu
+NU_BANK_NAME=Nu Colombia
+NU_ACCOUNT_TYPE=Cuenta de Ahorros
+NU_ACCOUNT_HOLDER=tu_nombre_completo
+
+# Configuración de Email
+EMAIL_USER=tu_email@gmail.com
+EMAIL_PASS=tu_password_de_aplicacion_gmail
+
+# Configuración de CORS
+CORS_ORIGIN=http://localhost:3000
 ```
 
-4. Iniciar la aplicación:
+4. Inicia el servidor:
 ```bash
-npm start
-```
-
-5. Abrir en el navegador:
-```
-http://localhost:3000
+npm run dev
 ```
 
 ## Estructura del Proyecto
 
 ```
-proyecto/
-├── src/
-│   ├── config/
-│   │   └── database.js    # Configuración de MongoDB
-│   ├── middleware/
-│   │   └── auth.js        # Middleware de autenticación
-│   ├── models/
-│   │   ├── Stats.js       # Modelo de estadísticas
-│   │   ├── User.js        # Modelo de usuarios
-│   │   └── Factura.js     # Modelo de facturas
-│   ├── routes/
-│   │   ├── auth.js        # Rutas de autenticación
-│   │   ├── facturas.js    # Rutas de facturas
-│   │   └── politicas.js   # Rutas de políticas
-│   ├── views/
-│   │   ├── index.ejs      # Vista principal
-│   │   ├── politicas.ejs  # Políticas de uso
-│   │   └── registro.ejs   # Formulario de registro
-│   └── index.js           # Archivo principal
-├── .env                   # Variables de entorno
-├── .gitignore            # Archivos ignorados por git
-└── README.md             # Documentación
+src/
+  ├── models/
+  │   ├── Donacion.js      # Usa la base de datos de pagos
+  │   ├── Membresia.js     # Usa la base de datos de pagos
+  │   ├── Factura.js       # Usa la base de datos de acueducto
+  │   ├── Stats.js         # Usa la base de datos de acueducto
+  │   └── User.js          # Usa la base de datos de pagos
+  ├── controllers/
+  ├── routes/
+  ├── middleware/
+  ├── config/
+  └── app.js
 ```
+
+## Notas sobre la separación de bases de datos
+- **Donaciones, membresías y usuarios** se almacenan en la base de datos `sistema-pagos`.
+- **Facturas y estadísticas de consumo de agua** se almacenan en la base de datos `AcueductoDB`.
+- Esto permite mayor seguridad, escalabilidad y organización de los datos.
 
 ## API Endpoints
 
-### Autenticación
-- POST `/auth/registro` - Registro de usuarios
-- POST `/auth/login` - Inicio de sesión
-- GET `/auth/perfil` - Obtener perfil de usuario
+### Donaciones
+- POST /api/donaciones/procesar
+- POST /api/donaciones/webhook
+- GET /api/donaciones/estado/:referencia
 
-### Facturas
-- GET `/facturas/:usuarioId` - Obtener facturas del usuario
-- POST `/facturas` - Crear nueva factura
-- PUT `/facturas/:id` - Actualizar factura
-- DELETE `/facturas/:id` - Eliminar factura
-
-### Políticas
-- GET `/politicas` - Ver políticas de uso y privacidad
-
-## Características de Seguridad
-
-- Autenticación mediante JWT
-- Contraseñas hasheadas con bcrypt
-- Validación de datos en frontend y backend
-- Protección de rutas mediante middleware
-- Aceptación obligatoria de políticas de uso
-- Gestión segura de sesiones con limpieza automática
-- Redirección inteligente según estado de autenticación
-
-## Experiencia de Usuario
-
-### Navegación Intuitiva
-- Barra de navegación adaptativa según estado de sesión
-- Botones de autenticación visibles cuando corresponda
-- Mensaje de bienvenida personalizado
-- Transiciones suaves entre estados de sesión
-
-### Gestión de Sesión
-- Inicio de sesión persistente
-- Cierre de sesión seguro con limpieza de datos
-- Redirección automática a página principal
-- Actualización dinámica de la interfaz
-
-### Acceso a Funcionalidades
-- Página principal accesible sin autenticación
-- Creación de facturas protegida por autenticación
-- Alertas informativas para acciones que requieren sesión
-- Interfaz adaptativa según permisos del usuario
-
-## Planes de Membresía
-
-### Plan Básico ($5/mes)
-- Sin anuncios
-- Reportes básicos
-
-### Plan Pro ($10/mes)
-- Sin anuncios
-- Reportes avanzados
-- Predicciones personalizadas
-
-### Plan Empresarial ($25/mes)
-- Todo lo del Plan Pro
-- API access
-- Soporte prioritario
-
-## Contribuir
-
-1. Fork el proyecto
-2. Crear una rama para tu función: `git checkout -b feature/NuevaFuncion`
-3. Commit tus cambios: `git commit -m 'Agregar nueva función'`
-4. Push a la rama: `git push origin feature/NuevaFuncion`
-5. Abrir un Pull Request
+### Membresías
+- POST /api/membresias/procesar
+- POST /api/membresias/webhook
+- GET /api/membresias/estado/:referencia
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT. 
+MIT 

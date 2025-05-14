@@ -847,6 +847,113 @@
         </div>
     </div>
 
+    <!-- Modal de Pago Nu -->
+    <div class="modal fade" id="nuModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Procesar Pago</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nuForm" action="/donaciones/procesar" method="post">
+                        <input type="hidden" name="merchantId" value="<%= process.env.NU_MERCHANT_ID %>">
+                        <input type="hidden" name="referenceCode" id="referenceCode">
+                        <input type="hidden" name="amount" id="nuAmount">
+                        <input type="hidden" name="currency" value="COP">
+                        <input type="hidden" name="signature" id="nuSignature">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Método de Pago</label>
+                            <select class="form-select" id="metodoPago" name="metodoPago" required>
+                                <option value="">Seleccione un método de pago</option>
+                                <option value="pse">PSE - Pago Seguro en Línea</option>
+                                <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                                <option value="tarjeta_debito">Tarjeta de Débito</option>
+                                <option value="efectivo">Pago en Efectivo</option>
+                                <option value="transferencia">Transferencia Bancaria</option>
+                            </select>
+                        </div>
+
+                        <div id="datosPSE" class="d-none">
+                            <div class="mb-3">
+                                <label class="form-label">Banco</label>
+                                <select class="form-select" name="banco">
+                                    <option value="">Seleccione su banco</option>
+                                    <option value="bancolombia">Bancolombia</option>
+                                    <option value="davivienda">Davivienda</option>
+                                    <option value="banco_popular">Banco Popular</option>
+                                    <!-- Agregar más bancos según sea necesario -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Persona</label>
+                                <select class="form-select" name="tipoPersona">
+                                    <option value="natural">Persona Natural</option>
+                                    <option value="juridica">Persona Jurídica</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="datosTarjeta" class="d-none">
+                            <div class="mb-3">
+                                <label class="form-label">Número de Tarjeta</label>
+                                <input type="text" class="form-control" name="numeroTarjeta" maxlength="16">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha de Vencimiento</label>
+                                        <input type="text" class="form-control" name="fechaVencimiento" placeholder="MM/AA">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">CVV</label>
+                                        <input type="text" class="form-control" name="cvv" maxlength="4">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo electrónico</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control" name="nombre" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Documento de Identidad</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select class="form-select" name="tipoDocumento" required>
+                                        <option value="cc">C.C.</option>
+                                        <option value="ce">C.E.</option>
+                                        <option value="nit">NIT</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" name="documento" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Proceder al pago</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <% if (typeof userName !== 'undefined' && userName) { %>
     <div class="container mt-5" id="dashboardUsuario">
         <div class="row justify-content-center">
@@ -1608,25 +1715,37 @@
             // Generar referencia única
             const referenceCode = 'DON-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             
-            // Actualizar campos del formulario PayU
+            // Actualizar campos del formulario Nu
             document.getElementById('referenceCode').value = referenceCode;
-            document.getElementById('payuAmount').value = monto;
-            document.getElementById('buyerEmail').value = document.getElementById('emailInput').value;
+            document.getElementById('nuAmount').value = monto;
             
             // Calcular firma
-            const signature = calcularFirmaPayU(referenceCode, monto, 'COP');
-            document.getElementById('payuSignature').value = signature;
+            const signature = calcularFirmaNu(referenceCode, monto, 'COP');
+            document.getElementById('nuSignature').value = signature;
             
             // Mostrar modal de pago
-            $('#payuModal').modal('show');
+            $('#nuModal').modal('show');
         }
 
-        function calcularFirmaPayU(referenceCode, amount, currency) {
-            const apiKey = '<%= process.env.PAYU_API_KEY %>';
-            const merchantId = '<%= process.env.PAYU_MERCHANT_ID %>';
+        function calcularFirmaNu(referenceCode, amount, currency) {
+            const apiKey = '<%= process.env.NU_API_KEY %>';
+            const merchantId = '<%= process.env.NU_MERCHANT_ID %>';
             const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
-            return md5(signatureString);
+            return sha256(signatureString);
         }
+
+        // Mostrar/ocultar campos según método de pago
+        document.getElementById('metodoPago').addEventListener('change', function(e) {
+            const metodoPago = e.target.value;
+            document.getElementById('datosPSE').classList.add('d-none');
+            document.getElementById('datosTarjeta').classList.add('d-none');
+            
+            if (metodoPago === 'pse') {
+                document.getElementById('datosPSE').classList.remove('d-none');
+            } else if (metodoPago === 'tarjeta_credito' || metodoPago === 'tarjeta_debito') {
+                document.getElementById('datosTarjeta').classList.remove('d-none');
+            }
+        });
 
         function seleccionarPlan(plan) {
             // Aquí implementarías la lógica de suscripción

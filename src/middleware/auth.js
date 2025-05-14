@@ -1,31 +1,29 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-const auth = async (req, res, next) => {
+exports.verificarToken = async (req, res, next) => {
     try {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        console.log('Token recibido:', token);
+        // Obtener el token del header
+        const token = req.headers.authorization?.split(' ')[1];
+        
         if (!token) {
-            console.log('No se recibió token');
-            throw new Error('No autorizado');
+            return res.status(401).json({ error: 'Token no proporcionado' });
         }
 
+        // Verificar el token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('Token decodificado:', decoded);
-        const user = await User.findOne({ _id: decoded.userId });
-
-        if (!user) {
-            console.log('Usuario no encontrado para el token');
-            throw new Error('No autorizado');
+        
+        // Buscar el usuario
+        const usuario = await User.findById(decoded.userId);
+        if (!usuario) {
+            return res.status(401).json({ error: 'Usuario no encontrado' });
         }
 
-        req.token = token;
-        req.user = user;
+        // Agregar el usuario al request
+        req.user = usuario;
         next();
     } catch (error) {
-        console.error('Error en autenticación:', error);
-        res.status(401).json({ error: 'Por favor autentíquese' });
+        console.error('Error en verificación de token:', error);
+        res.status(401).json({ error: 'Token inválido' });
     }
-};
-
-module.exports = auth; 
+}; 
