@@ -25,10 +25,7 @@ const facturaSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    fechaVencimiento: {
-        type: Date,
-        required: true
-    },
+    fechaVencimiento: Date,
     fechaPago: Date,
     periodoFacturacion: {
         inicio: Date,
@@ -82,12 +79,8 @@ const facturaSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['pendiente', 'pagada', 'vencida', 'mora'],
+        enum: ['pendiente', 'pagada', 'vencida'],
         default: 'pendiente'
-    },
-    diasMora: {
-        type: Number,
-        default: 0
     },
     imagenFactura: String,
     referenciaPayU: String,
@@ -96,34 +89,6 @@ const facturaSchema = new mongoose.Schema({
         email: String,
         telefono: String,
         direccion: String
-    },
-    beneficios: {
-        puntosGanados: {
-            type: Number,
-            default: 0
-        },
-        descuentoAplicado: {
-            type: Number,
-            default: 0
-        },
-        rachaPagos: {
-            type: Number,
-            default: 0
-    }
-    },
-    membresia: {
-        tipo: {
-            type: String,
-            enum: ['basica', 'premium', 'vip'],
-            default: 'basica'
-        },
-        fechaInicio: Date,
-        fechaFin: Date,
-        beneficios: [{
-            tipo: String,
-            descripcion: String,
-            activo: Boolean
-        }]
     }
 }, {
     timestamps: true
@@ -132,26 +97,27 @@ const facturaSchema = new mongoose.Schema({
 // Índices
 facturaSchema.index({ usuario: 1, fechaEmision: -1 });
 facturaSchema.index({ numeroFactura: 1 }, { unique: true });
-facturaSchema.index({ estado: 1, fechaVencimiento: 1 });
 
 // Middleware para calcular valores antes de guardar
 facturaSchema.pre('save', async function(next) {
     try {
         // Calcular consumo total
-    if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
-        this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
-    }
+        if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
+            this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
+        }
 
         // Calcular total
         if (this.valores) {
             this.valores.total = (this.valores.cargoFijo || 0) + 
                                (this.valores.consumo || 0) + 
                                (this.valores.otros || 0);
-            this.monto = this.valores.total;
+            this.monto = this.valores.total; // Actualizar monto con el total
         }
 
         // Calcular métricas de sostenibilidad
         if (this.consumo.consumoTotal) {
+            // Aquí podrías agregar la lógica para calcular las métricas
+            // Por ahora solo establecemos valores por defecto
             this.metricasSostenibilidad = {
                 comparacionPromedio: 0,
                 tendencia: 0,
@@ -159,44 +125,11 @@ facturaSchema.pre('save', async function(next) {
             };
         }
 
-        // Actualizar estado y días de mora
-        if (this.estado !== 'pagada') {
-            const hoy = new Date();
-            if (this.fechaVencimiento && hoy > this.fechaVencimiento) {
-                const diasDiferencia = Math.floor((hoy - this.fechaVencimiento) / (1000 * 60 * 60 * 24));
-                this.diasMora = diasDiferencia;
-                this.estado = diasDiferencia > 30 ? 'mora' : 'vencida';
-            }
-        }
-
-    next();
+        next();
     } catch (error) {
         next(error);
     }
 });
-
-// Método estático para actualizar estados de facturas vencidas
-facturaSchema.statics.actualizarEstadosVencidos = async function() {
-    try {
-        const hoy = new Date();
-        const facturasVencidas = await this.find({
-            estado: { $in: ['pendiente', 'vencida'] },
-            fechaVencimiento: { $lt: hoy }
-        });
-
-        for (const factura of facturasVencidas) {
-            const diasDiferencia = Math.floor((hoy - factura.fechaVencimiento) / (1000 * 60 * 60 * 24));
-            factura.diasMora = diasDiferencia;
-            factura.estado = diasDiferencia > 30 ? 'mora' : 'vencida';
-            await factura.save();
-        }
-
-        return facturasVencidas.length;
-    } catch (error) {
-        console.error('Error al actualizar estados vencidos:', error);
-        throw error;
-    }
-};
 
 // Método para crear factura
 facturaSchema.statics.crearFactura = async function(datosFactura) {
@@ -262,63 +195,6 @@ facturaSchema.statics.obtenerFactura = async function(idFactura) {
         console.error('Error al obtener factura:', error);
         throw new Error(`Error al obtener la factura: ${error.message}`);
     }
-};
-
-// Método para calcular beneficios por pago puntual
-facturaSchema.methods.calcularBeneficios = async function() {
-    try {
-        const hoy = new Date();
-        const esPagoPuntual = hoy <= this.fechaVencimiento;
-        
-        if (esPagoPuntual) {
-            // Calcular puntos base
-            this.beneficios.puntosGanados = Math.floor(this.monto * 0.1); // 10% del monto en puntos
-            
-            // Incrementar racha de pagos
-            this.beneficios.rachaPagos += 1;
-            
-            // Aplicar descuento por racha
-            if (this.beneficios.rachaPagos >= 3) {
-                this.beneficios.descuentoAplicado = 0.05; // 5% de descuento por 3 pagos puntuales
-            }
-            
-            // Actualizar membresía según racha
-            if (this.beneficios.rachaPagos >= 6) {
-                this.membresia.tipo = 'premium';
-                this.membresia.beneficios = [
-                    { tipo: 'descuento', descripcion: '10% de descuento en todas las facturas', activo: true },
-                    { tipo: 'prioridad', descripcion: 'Atención prioritaria', activo: true }
-                ];
-            }
-            
-            if (this.beneficios.rachaPagos >= 12) {
-                this.membresia.tipo = 'vip';
-                this.membresia.beneficios = [
-                    { tipo: 'descuento', descripcion: '15% de descuento en todas las facturas', activo: true },
-                    { tipo: 'prioridad', descripcion: 'Atención VIP', activo: true },
-                    { tipo: 'extras', descripcion: 'Servicios adicionales gratuitos', activo: true }
-                ];
-            }
-        }
-        
-        return this;
-    } catch (error) {
-        console.error('Error al calcular beneficios:', error);
-        throw error;
-    }
-};
-
-// Método para obtener resumen de beneficios
-facturaSchema.methods.obtenerResumenBeneficios = function() {
-    return {
-        puntosGanados: this.beneficios.puntosGanados,
-        descuentoAplicado: this.beneficios.descuentoAplicado,
-        rachaPagos: this.beneficios.rachaPagos,
-        membresia: {
-            tipo: this.membresia.tipo,
-            beneficios: this.membresia.beneficios
-        }
-    };
 };
 
 const Factura = mongoose.model('Factura', facturaSchema);

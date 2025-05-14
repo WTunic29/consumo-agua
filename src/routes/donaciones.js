@@ -1,146 +1,79 @@
-// --- FUNCIONALIDAD DE DONACIONES INACTIVA TEMPORALMENTE ---
-// Para reactivar, descomenta las rutas y controladores según sea necesario.
+const express = require('express');
+const router = express.Router();
+const crypto = require('crypto');
 
-// const express = require('express');
-// const router = express.Router();
-// const Donacion = require('../models/Donacion');
-// const auth = require('../middleware/auth');
-// const crypto = require('crypto');
+// Función para verificar la firma de PayU
+function verificarFirmaPayU(referenceCode, amount, currency, signature) {
+    const apiKey = process.env.PAYU_API_KEY;
+    const merchantId = process.env.PAYU_MERCHANT_ID;
+    const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
+    const calculatedSignature = crypto.createHash('md5').update(signatureString).digest('hex');
+    return calculatedSignature === signature;
+}
 
-// // Crear nueva donación
-// router.post('/', auth, async (req, res) => {
-//     try {
-//         const { monto, tipo } = req.body;
-        
-//         // Validar monto mínimo
-//         if (monto < 1000) {
-//             return res.status(400).json({ error: 'El monto mínimo de donación es $1.000 COP' });
-//         }
+// Ruta para procesar la respuesta de PayU
+router.post('/confirmacion', async (req, res) => {
+    try {
+        const {
+            referenceCode,
+            amount,
+            currency,
+            signature,
+            state_pol,
+            response_code_pol,
+            payment_method_type,
+            transaction_id
+        } = req.body;
 
-//         // Crear nueva donación
-//         const donacion = new Donacion({
-//             usuario: req.user._id,
-//             monto,
-//             tipo,
-//             referenciaPayU: Donacion.generarReferencia()
-//         });
+        // Verificar la firma
+        if (!verificarFirmaPayU(referenceCode, amount, currency, signature)) {
+            console.error('Firma inválida en la confirmación de PayU');
+            return res.status(400).send('Firma inválida');
+        }
 
-//         await donacion.save();
+        // Verificar el estado de la transacción
+        if (state_pol === '4' || state_pol === '7') {
+            // Transacción aprobada
+            // Aquí puedes guardar la información en tu base de datos
+            console.log('Donación exitosa:', {
+                referenceCode,
+                amount,
+                currency,
+                paymentMethod: payment_method_type,
+                transactionId: transaction_id
+            });
 
-//         // Calcular firma para PayU
-//         const signature = donacion.calcularFirmaPayU();
+            // TODO: Guardar la donación en la base de datos
+            // TODO: Enviar email de confirmación al donante
+        } else {
+            console.error('Transacción fallida:', {
+                referenceCode,
+                state: state_pol,
+                responseCode: response_code_pol
+            });
+        }
 
-//         // Preparar datos para PayU
-//         const payuData = {
-//             merchantId: process.env.PAYU_MERCHANT_ID,
-//             accountId: process.env.PAYU_ACCOUNT_ID,
-//             description: `Donación ${tipo === 'mensual' ? 'mensual' : 'única'} - ConsumoAgua`,
-//             referenceCode: donacion.referenciaPayU,
-//             amount: monto,
-//             tax: 0,
-//             taxReturnBase: 0,
-//             currency: 'COP',
-//             signature: signature,
-//             test: process.env.NODE_ENV === 'development' ? '1' : '0',
-//             buyerEmail: req.user.email,
-//             responseUrl: `${process.env.BASE_URL}/donaciones/respuesta`,
-//             confirmationUrl: `${process.env.BASE_URL}/donaciones/confirmacion`
-//         };
+        res.status(200).send('OK');
+    } catch (error) {
+        console.error('Error procesando confirmación de PayU:', error);
+        res.status(500).send('Error interno');
+    }
+});
 
-//         res.json({
-//             mensaje: 'Donación creada exitosamente',
-//             donacion,
-//             payuData
-//         });
-//     } catch (error) {
-//         console.error('Error al crear donación:', error);
-//         res.status(500).json({ error: 'Error al procesar la donación' });
-//     }
-// });
+// Ruta para la página de éxito
+router.get('/exito', (req, res) => {
+    res.render('donacion_exito', {
+        title: 'Donación Exitosa',
+        message: '¡Gracias por tu donación! Tu apoyo es muy importante para nosotros.'
+    });
+});
 
-// Ruta de respuesta de PayU
-// router.post('/respuesta', async (req, res) => {
-//     try {
-//         const {
-//             referenceCode,
-//             transactionState,
-//             signature,
-//             amount,
-//             currency
-//         } = req.body;
+// Ruta para la página de error
+router.get('/error', (req, res) => {
+    res.render('donacion_error', {
+        title: 'Error en la Donación',
+        message: 'Hubo un problema al procesar tu donación. Por favor, intenta nuevamente.'
+    });
+});
 
-//         // Verificar firma
-//         const donacion = await Donacion.findOne({ referenciaPayU: referenceCode });
-//         if (!donacion) {
-//             return res.status(404).json({ error: 'Donación no encontrada' });
-//         }
-
-//         const calculatedSignature = donacion.calcularFirmaPayU();
-//         if (calculatedSignature !== signature) {
-//             return res.status(400).json({ error: 'Firma inválida' });
-//         }
-
-//         // Actualizar estado de la donación
-//         donacion.estado = transactionState === '4' ? 'completada' : 'fallida';
-//         donacion.fechaPago = new Date();
-//         await donacion.save();
-
-//         // Redirigir según el estado
-//         if (transactionState === '4') {
-//             res.redirect('/donaciones/exito');
-//         } else {
-//             res.redirect('/donaciones/error');
-//         }
-//     } catch (error) {
-//         console.error('Error al procesar respuesta de PayU:', error);
-//         res.redirect('/donaciones/error');
-//     }
-// });
-
-// Ruta de confirmación de PayU
-// router.post('/confirmacion', async (req, res) => {
-//     try {
-//         const {
-//             referenceCode,
-//             transactionState,
-//             signature,
-//             amount,
-//             currency
-//         } = req.body;
-
-//         // Verificar firma
-//         const donacion = await Donacion.findOne({ referenciaPayU: referenceCode });
-//         if (!donacion) {
-//             return res.status(404).json({ error: 'Donación no encontrada' });
-//         }
-
-//         const calculatedSignature = donacion.calcularFirmaPayU();
-//         if (calculatedSignature !== signature) {
-//             return res.status(400).json({ error: 'Firma inválida' });
-//         }
-
-//         // Actualizar estado de la donación
-//         donacion.estado = transactionState === '4' ? 'completada' : 'fallida';
-//         donacion.fechaPago = new Date();
-//         await donacion.save();
-
-//         res.status(200).json({ mensaje: 'Confirmación procesada' });
-//     } catch (error) {
-//         console.error('Error al procesar confirmación de PayU:', error);
-//         res.status(500).json({ error: 'Error al procesar confirmación' });
-//     }
-// });
-
-// Obtener historial de donaciones del usuario
-// router.get('/historial', auth, async (req, res) => {
-//     try {
-//         const donaciones = await Donacion.find({ usuario: req.user._id })
-//             .sort({ fechaCreacion: -1 });
-//         res.json(donaciones);
-//     } catch (error) {
-//         console.error('Error al obtener historial de donaciones:', error);
-//         res.status(500).json({ error: 'Error al obtener historial' });
-//     }
-// });
-
-// module.exports = router; 
+module.exports = router; 
