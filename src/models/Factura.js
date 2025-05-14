@@ -109,7 +109,7 @@ const facturaSchema = new mongoose.Schema({
         rachaPagos: {
             type: Number,
             default: 0
-        }
+    }
     },
     membresia: {
         tipo: {

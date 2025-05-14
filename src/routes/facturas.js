@@ -4,16 +4,8 @@ const Factura = require('../models/Factura');
 const auth = require('../middleware/auth');
 const { validarFactura } = require('../middleware/validator');
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
 const facturaController = require('../controllers/facturaController');
 const { body, query } = require('express-validator');
-
-// Configuración de Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 // Configuración de rate limiting (opcional)
 let limiter;
@@ -59,13 +51,10 @@ const validarFiltros = [
 router.use(auth);
 router.use(limiter);
 
-// Obtener todas las facturas del usuario
-router.get('/', facturaController.getFacturas);
-
 // Obtener facturas con paginación y filtros
 router.get('/', validarFiltros, facturaController.getFacturas);
 
-// Crear factura con imagen
+// Crear factura
 router.post('/', 
     upload.single('imagen'),
     validarFactura,
@@ -76,27 +65,8 @@ router.post('/',
                 ...req.body
             };
 
-            // Subir imagen a Cloudinary si existe
-            if (req.file) {
-                const b64 = Buffer.from(req.file.buffer).toString('base64');
-                const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-                const resultado = await cloudinary.uploader.upload(dataURI, {
-                    folder: 'facturas',
-                    resource_type: 'image',
-                    transformation: [
-                        { width: 1000, height: 1000, crop: 'limit' },
-                        { quality: 'auto' }
-                    ]
-                });
-                facturaData.imagenFactura = resultado.secure_url;
-            }
-
             const nuevaFactura = new Factura(facturaData);
             await nuevaFactura.save();
-
-            // Enviar notificación
-            await enviarNotificacion(req.user._id, 'Nueva factura registrada', 
-                `Se ha registrado la factura ${nuevaFactura.numeroFactura}`);
 
             res.status(201).json({
                 mensaje: 'Factura registrada exitosamente',
@@ -119,12 +89,6 @@ router.post('/',
 
 // Ver detalle de una factura
 router.get('/:id', facturaController.getFactura);
-
-// Mostrar formulario de pago
-router.get('/:id/pagar', facturaController.mostrarFormularioPago);
-
-// Procesar pago de factura
-router.post('/:id/pagar', facturaController.procesarPago);
 
 // Actualizar factura
 router.put('/:id', 
@@ -170,12 +134,6 @@ router.delete('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Factura no encontrada' });
         }
 
-        // Eliminar imagen de Cloudinary si existe
-        if (factura.imagenFactura) {
-            const publicId = factura.imagenFactura.split('/').pop().split('.')[0];
-            await cloudinary.uploader.destroy(publicId);
-        }
-
         res.json({ mensaje: 'Factura eliminada correctamente' });
     } catch (error) {
         console.error('Error al eliminar la factura:', error);
@@ -192,25 +150,5 @@ router.get('/exportar/excel', facturaController.exportarExcel);
 
 // Obtener estadísticas
 router.get('/estadisticas', facturaController.getEstadisticas);
-
-// Sistema de notificaciones
-async function enviarNotificacion(usuarioId, titulo, mensaje) {
-    try {
-        const usuario = await User.findById(usuarioId);
-        if (usuario.perfil.preferenciasNotificacion.email) {
-            // Enviar email
-            // Implementar lógica de envío de email
-        }
-        // Guardar notificación en la base de datos
-        await Notificacion.create({
-            usuario: usuarioId,
-            titulo,
-            mensaje,
-            fecha: new Date()
-        });
-    } catch (error) {
-        console.error('Error al enviar notificación:', error);
-    }
-}
 
 module.exports = router;

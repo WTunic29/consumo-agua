@@ -4,8 +4,11 @@ const connectDB = async () => {
     try {
         const conn = await mongoose.connect(process.env.MONGODB_URI, {
             useNewUrlParser: true,
-            useUnifiedTopology: true
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
         });
+
         console.log(`MongoDB conectado: ${conn.connection.host}`);
         console.log(`Base de datos: ${conn.connection.name}`);
         
@@ -17,7 +20,7 @@ const connectDB = async () => {
         const count = await conn.connection.db.collection('stats').countDocuments();
         console.log(`Número de documentos en stats: ${count}`);
     } catch (error) {
-        console.error(`Error: ${error.message}`);
+        console.error('Error al conectar a MongoDB:', error);
         process.exit(1);
     }
 };
