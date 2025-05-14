@@ -18,21 +18,21 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Obtener todas las facturas del usuario
-// router.get('/', auth, async (req, res) => {
-//     try {
-//         console.log('Buscando facturas para usuario:', req.user._id);
-//         const facturas = await Factura.find({ usuario: req.user._id })
-//             .sort({ fechaEmision: -1 });
-//         console.log('Facturas encontradas:', facturas.length);
-//         res.json(facturas);
-//     } catch (error) {
-//         console.error('Error al obtener facturas:', error);
-//         res.status(500).json({ 
-//             error: 'Error al obtener facturas',
-//             detalles: error.message 
-//         });
-//     }
-// });
+router.get('/', auth, async (req, res) => {
+    try {
+        console.log('Buscando facturas para usuario:', req.user._id);
+        const facturas = await Factura.find({ usuario: req.user._id })
+            .sort({ fechaEmision: -1 });
+        console.log('Facturas encontradas:', facturas.length);
+        res.json(facturas);
+    } catch (error) {
+        console.error('Error al obtener facturas:', error);
+        res.status(500).json({ 
+            error: 'Error al obtener facturas',
+            detalles: error.message 
+        });
+    }
+});
 
 // Obtener facturas con paginación y filtros
 router.get('/', auth, async (req, res) => {

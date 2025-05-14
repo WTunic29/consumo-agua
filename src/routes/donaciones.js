@@ -7,7 +7,7 @@ const crypto = require('crypto');
 // Crear nueva donación
 router.post('/', auth, async (req, res) => {
     try {
-        const { monto, tipo, metodoPago, detallesPago } = req.body;
+        const { monto, tipo } = req.body;
         
         // Validar monto mínimo
         if (monto < 1000) {
@@ -19,24 +19,25 @@ router.post('/', auth, async (req, res) => {
             usuario: req.user._id,
             monto,
             tipo,
-            metodoPago,
-            detallesPago,
-            referenciaNu: Donacion.generarReferencia()
+            referenciaPayU: Donacion.generarReferencia()
         });
 
         await donacion.save();
 
-        // Calcular token para Nu
-        const token = donacion.generarTokenNu();
+        // Calcular firma para PayU
+        const signature = donacion.calcularFirmaPayU();
 
-        // Preparar datos para Nu
-        const nuData = {
-            merchantId: process.env.NU_MERCHANT_ID,
+        // Preparar datos para PayU
+        const payuData = {
+            merchantId: process.env.PAYU_MERCHANT_ID,
+            accountId: process.env.PAYU_ACCOUNT_ID,
             description: `Donación ${tipo === 'mensual' ? 'mensual' : 'única'} - ConsumoAgua`,
-            referenceCode: donacion.referenciaNu,
+            referenceCode: donacion.referenciaPayU,
             amount: monto,
+            tax: 0,
+            taxReturnBase: 0,
             currency: 'COP',
-            token: token,
+            signature: signature,
             test: process.env.NODE_ENV === 'development' ? '1' : '0',
             buyerEmail: req.user.email,
             responseUrl: `${process.env.BASE_URL}/donaciones/respuesta`,
@@ -46,7 +47,7 @@ router.post('/', auth, async (req, res) => {
         res.json({
             mensaje: 'Donación creada exitosamente',
             donacion,
-            nuData
+            payuData
         });
     } catch (error) {
         console.error('Error al crear donación:', error);
@@ -54,75 +55,75 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Ruta de respuesta de Nu
+// Ruta de respuesta de PayU
 router.post('/respuesta', async (req, res) => {
     try {
         const {
             referenceCode,
             transactionState,
-            token,
+            signature,
             amount,
             currency
         } = req.body;
 
-        // Verificar token
-        const donacion = await Donacion.findOne({ referenciaNu: referenceCode });
+        // Verificar firma
+        const donacion = await Donacion.findOne({ referenciaPayU: referenceCode });
         if (!donacion) {
             return res.status(404).json({ error: 'Donación no encontrada' });
         }
 
-        const calculatedToken = donacion.generarTokenNu();
-        if (calculatedToken !== token) {
-            return res.status(400).json({ error: 'Token inválido' });
+        const calculatedSignature = donacion.calcularFirmaPayU();
+        if (calculatedSignature !== signature) {
+            return res.status(400).json({ error: 'Firma inválida' });
         }
 
         // Actualizar estado de la donación
-        donacion.estado = transactionState === 'APPROVED' ? 'completada' : 'fallida';
+        donacion.estado = transactionState === '4' ? 'completada' : 'fallida';
         donacion.fechaPago = new Date();
         await donacion.save();
 
         // Redirigir según el estado
-        if (transactionState === 'APPROVED') {
+        if (transactionState === '4') {
             res.redirect('/donaciones/exito');
         } else {
             res.redirect('/donaciones/error');
         }
     } catch (error) {
-        console.error('Error al procesar respuesta de Nu:', error);
+        console.error('Error al procesar respuesta de PayU:', error);
         res.redirect('/donaciones/error');
     }
 });
 
-// Ruta de confirmación de Nu
+// Ruta de confirmación de PayU
 router.post('/confirmacion', async (req, res) => {
     try {
         const {
             referenceCode,
             transactionState,
-            token,
+            signature,
             amount,
             currency
         } = req.body;
 
-        // Verificar token
-        const donacion = await Donacion.findOne({ referenciaNu: referenceCode });
+        // Verificar firma
+        const donacion = await Donacion.findOne({ referenciaPayU: referenceCode });
         if (!donacion) {
             return res.status(404).json({ error: 'Donación no encontrada' });
         }
 
-        const calculatedToken = donacion.generarTokenNu();
-        if (calculatedToken !== token) {
-            return res.status(400).json({ error: 'Token inválido' });
+        const calculatedSignature = donacion.calcularFirmaPayU();
+        if (calculatedSignature !== signature) {
+            return res.status(400).json({ error: 'Firma inválida' });
         }
 
         // Actualizar estado de la donación
-        donacion.estado = transactionState === 'APPROVED' ? 'completada' : 'fallida';
+        donacion.estado = transactionState === '4' ? 'completada' : 'fallida';
         donacion.fechaPago = new Date();
         await donacion.save();
 
         res.status(200).json({ mensaje: 'Confirmación procesada' });
     } catch (error) {
-        console.error('Error al procesar confirmación de Nu:', error);
+        console.error('Error al procesar confirmación de PayU:', error);
         res.status(500).json({ error: 'Error al procesar confirmación' });
     }
 });

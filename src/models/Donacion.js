@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const donacionSchema = new mongoose.Schema({
     usuario: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User',
+        required: true
     },
     monto: {
         type: Number,
@@ -17,43 +18,29 @@ const donacionSchema = new mongoose.Schema({
     },
     estado: {
         type: String,
-        enum: ['pendiente', 'completada', 'fallida', 'cancelada'],
+        enum: ['pendiente', 'completada', 'fallida', 'reembolsada'],
         default: 'pendiente'
     },
-    fecha: {
-        type: Date,
-        default: Date.now
-    },
-    metodoPago: {
-        type: String,
-        enum: ['pse', 'tarjeta_credito', 'tarjeta_debito', 'efectivo', 'transferencia'],
-        required: true
-    },
-    detallesPago: {
-        banco: String,
-        tipoCuenta: String,
-        numeroCuenta: String,
-        titular: String,
-        documento: String,
-        tipoDocumento: String,
-        email: String,
-        telefono: String
-    },
-    referenciaNu: {
+    referenciaPayU: {
         type: String,
         required: true,
         unique: true
     },
-    mensual: {
-        activa: {
-            type: Boolean,
-            default: false
-        },
-        fechaProximoCargo: Date,
-        renovacionAutomatica: {
-            type: Boolean,
-            default: true
-        }
+    fechaCreacion: {
+        type: Date,
+        default: Date.now
+    },
+    fechaPago: Date,
+    metodoPago: String,
+    detallesPago: {
+        tipo: String,
+        banco: String,
+        numeroTarjeta: String,
+        cuotas: Number
+    },
+    comprobante: {
+        url: String,
+        nombre: String
     }
 });
 
@@ -62,47 +49,17 @@ donacionSchema.statics.generarReferencia = function() {
     return 'DON-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 };
 
-// Método para generar token de seguridad Nu
-donacionSchema.methods.generarTokenNu = function() {
+// Método para calcular la firma de PayU
+donacionSchema.methods.calcularFirmaPayU = function() {
     const crypto = require('crypto');
-    const apiKey = process.env.NU_API_KEY;
-    const merchantId = process.env.NU_MERCHANT_ID;
-    const referenceCode = this.referenciaNu;
+    const apiKey = process.env.PAYU_API_KEY;
+    const merchantId = process.env.PAYU_MERCHANT_ID;
+    const referenceCode = this.referenciaPayU;
     const amount = this.monto;
     const currency = 'COP';
     
     const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
-    return crypto.createHash('sha256').update(signatureString).digest('hex');
-};
-
-// Método para procesar renovación mensual
-donacionSchema.methods.procesarRenovacionMensual = async function() {
-    if (!this.mensual.activa || !this.mensual.renovacionAutomatica) {
-        return false;
-    }
-
-    const hoy = new Date();
-    if (hoy >= this.mensual.fechaProximoCargo) {
-        // Crear nueva donación
-        const nuevaDonacion = new this.constructor({
-            usuario: this.usuario,
-            monto: this.monto,
-            tipo: 'mensual',
-            metodoPago: this.metodoPago,
-            detallesPago: this.detallesPago,
-            mensual: {
-                activa: true,
-                fechaProximoCargo: new Date(hoy.setMonth(hoy.getMonth() + 1)),
-                renovacionAutomatica: true
-            }
-        });
-
-        nuevaDonacion.referenciaNu = this.constructor.generarReferencia();
-        await nuevaDonacion.save();
-        return true;
-    }
-
-    return false;
+    return crypto.createHash('md5').update(signatureString).digest('hex');
 };
 
 module.exports = mongoose.model('Donacion', donacionSchema); 
