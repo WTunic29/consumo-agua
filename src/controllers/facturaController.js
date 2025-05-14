@@ -1,74 +1,19 @@
 const Factura = require('../models/Factura');
 const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
+const { validationResult } = require('express-validator');
 
-// Función para calcular estadísticas
-const calcularEstadisticas = async (userId) => {
-    try {
-        const facturas = await Factura.find({ usuario: userId })
-            .sort({ fechaEmision: -1 })
-            .limit(12);
-
-        const estadisticas = {
-            consumoPromedio: 0,
-            montoPromedio: 0,
-            facturasPagadas: 0,
-            facturasPendientes: 0,
-            facturasVencidas: 0,
-            consumoMensual: []
-        };
-
-        if (facturas.length > 0) {
-            // Calcular promedios
-            const totalConsumo = facturas.reduce((sum, f) => sum + (f.consumo?.consumoTotal || 0), 0);
-            const totalMonto = facturas.reduce((sum, f) => sum + (f.monto || 0), 0);
-            
-            estadisticas.consumoPromedio = totalConsumo / facturas.length;
-            estadisticas.montoPromedio = totalMonto / facturas.length;
-
-            // Contar estados
-            facturas.forEach(factura => {
-                switch(factura.estado) {
-                    case 'pagada':
-                        estadisticas.facturasPagadas++;
-                        break;
-                    case 'pendiente':
-                        estadisticas.facturasPendientes++;
-                        break;
-                    case 'vencida':
-                        estadisticas.facturasVencidas++;
-                        break;
-                }
-            });
-
-            // Preparar datos para gráficos
-            estadisticas.consumoMensual = facturas.map(factura => ({
-                mes: new Date(factura.fechaEmision).toLocaleDateString('es-ES', { month: 'short' }),
-                consumo: factura.consumo?.consumoTotal || 0
-            }));
-        }
-
-        return estadisticas;
-    } catch (error) {
-        console.error('Error al calcular estadísticas:', error);
-        return {
-            consumoPromedio: 0,
-            montoPromedio: 0,
-            facturasPagadas: 0,
-            facturasPendientes: 0,
-            facturasVencidas: 0,
-            consumoMensual: []
-        };
-    }
-};
-
-// Obtener todas las facturas del usuario con filtros y paginación
+/**
+ * Obtiene las facturas del usuario con filtros y paginación
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ */
 exports.getFacturas = async (req, res) => {
     try {
-        if (!req.user || !req.user._id) {
-            return res.status(401).render('login', {
-                error: 'Por favor inicie sesión para continuar'
-            });
+        // Validar parámetros de entrada
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
 
         const page = parseInt(req.query.pagina) || 1;
@@ -103,20 +48,22 @@ exports.getFacturas = async (req, res) => {
                 case 'alto':
                     filtros.monto = { $gt: 100000 };
                     break;
+                default:
+                    return res.status(400).json({ error: 'Rango de monto inválido' });
             }
         }
 
-        // Obtener facturas con paginación
+        // Optimizar consulta usando proyección
         const facturas = await Factura.find(filtros)
+            .select('numeroFactura fechaEmision monto estado consumo')
             .sort({ fechaEmision: -1 })
             .skip(skip)
-            .limit(limit);
+            .limit(limit)
+            .lean();
 
-        // Obtener total de documentos para la paginación
         const total = await Factura.countDocuments(filtros);
         const totalPaginas = Math.ceil(total / limit);
 
-        // Obtener estadísticas de consumo
         const estadisticas = await calcularEstadisticas(req.user._id);
 
         res.render('facturas/index', {
@@ -124,8 +71,7 @@ exports.getFacturas = async (req, res) => {
             user: req.user,
             paginaActual: page,
             totalPaginas,
-            estadisticas,
-            error: null
+            estadisticas
         });
     } catch (error) {
         console.error('Error al obtener facturas:', error);
@@ -136,11 +82,21 @@ exports.getFacturas = async (req, res) => {
     }
 };
 
-// Exportar facturas a PDF
+/**
+ * Exporta las facturas a PDF
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ */
 exports.exportarPDF = async (req, res) => {
     try {
         const facturas = await Factura.find({ usuario: req.user._id })
-            .sort({ fechaEmision: -1 });
+            .select('numeroFactura fechaEmision monto estado consumo')
+            .sort({ fechaEmision: -1 })
+            .lean();
+
+        if (!facturas.length) {
+            return res.status(404).json({ error: 'No hay facturas para exportar' });
+        }
 
         const doc = new PDFDocument();
         res.setHeader('Content-Type', 'application/pdf');
@@ -169,11 +125,21 @@ exports.exportarPDF = async (req, res) => {
     }
 };
 
-// Exportar facturas a Excel
+/**
+ * Exporta las facturas a Excel
+ * @param {Object} req - Request object
+ * @param {Object} res - Response object
+ */
 exports.exportarExcel = async (req, res) => {
     try {
         const facturas = await Factura.find({ usuario: req.user._id })
-            .sort({ fechaEmision: -1 });
+            .select('numeroFactura fechaEmision monto estado consumo')
+            .sort({ fechaEmision: -1 })
+            .lean();
+
+        if (!facturas.length) {
+            return res.status(404).json({ error: 'No hay facturas para exportar' });
+        }
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Facturas');
@@ -207,6 +173,52 @@ exports.exportarExcel = async (req, res) => {
         res.status(500).json({ error: 'Error al generar el Excel' });
     }
 };
+
+/**
+ * Calcula estadísticas de consumo del usuario
+ * @param {string} userId - ID del usuario
+ * @returns {Object} Estadísticas de consumo
+ */
+async function calcularEstadisticas(userId) {
+    try {
+        const facturas = await Factura.find({ usuario: userId })
+            .select('consumo fechaEmision')
+            .sort({ fechaEmision: -1 })
+            .limit(12)
+            .lean();
+
+        if (!facturas.length) {
+            return {
+                consumoPromedio: 0,
+                promedioZona: 0,
+                tendencia: 'estable',
+                variacion: 0
+            };
+        }
+
+        const consumoPromedio = facturas.reduce((acc, f) => acc + (f.consumo?.consumoTotal || 0), 0) / facturas.length;
+        const promedioZona = consumoPromedio * 1.2; // 20% más que el promedio del usuario
+
+        const tendencia = facturas[0]?.consumo?.consumoTotal < facturas[1]?.consumo?.consumoTotal ? 'bajando' : 'subiendo';
+        const variacion = facturas.length > 1 ? 
+            ((facturas[0].consumo?.consumoTotal - facturas[1].consumo?.consumoTotal) / facturas[1].consumo?.consumoTotal * 100).toFixed(2) : 0;
+
+        return {
+            consumoPromedio,
+            promedioZona,
+            tendencia,
+            variacion
+        };
+    } catch (error) {
+        console.error('Error al calcular estadísticas:', error);
+        return {
+            consumoPromedio: 0,
+            promedioZona: 0,
+            tendencia: 'estable',
+            variacion: 0
+        };
+    }
+}
 
 // Obtener una factura específica
 exports.getFactura = async (req, res) => {
