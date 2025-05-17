@@ -414,7 +414,7 @@
                 <div class="d-flex align-items-center gap-2">
                     <div class="d-flex align-items-center" id="userSession" style="display: none;">
                         <span class="me-3">Bienvenido, <span id="userName"></span></span>
-                        <button class="btn btn-outline-danger" onclick="cerrarSesion()">Cerrar Sesión</button>
+                        <button class="btn btn-outline-danger" onclick="cerrarSesion()" id="btnCerrarSesion" style="display: none;">Cerrar Sesión</button>
                     </div>
                     <div class="d-flex align-items-center" id="authLinks" style="display: none;">
                         <a href="/auth/login" class="btn btn-outline-primary me-2">Iniciar Sesión</a>
@@ -1605,24 +1605,19 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Guardar datos del usuario
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userName', data.usuario.nombre);
                     localStorage.setItem('userId', data.usuario.id);
                     
-                    // Actualizar la UI
                     document.getElementById('userSession').style.display = 'flex';
                     document.getElementById('authLinks').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
+                    document.getElementById('btnCerrarSesion').style.display = 'block';
                     
-                    // Cerrar el modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                     modal.hide();
                     
-                    // Limpiar el formulario
                     e.target.reset();
-                    
-                    // Cargar facturas del usuario
                     cargarFacturas();
                     
                     alert('Inicio de sesión exitoso');
@@ -1644,11 +1639,11 @@
             }
             
             const formData = {
-                        nombre: document.getElementById('registroNombre').value,
-                        apellido: document.getElementById('registroApellido').value,
-                        email: document.getElementById('registroEmail').value,
-                        password: document.getElementById('registroPassword').value,
-                        telefono: document.getElementById('registroTelefono').value,
+                nombre: document.getElementById('registroNombre').value,
+                apellido: document.getElementById('registroApellido').value,
+                email: document.getElementById('registroEmail').value,
+                password: document.getElementById('registroPassword').value,
+                telefono: document.getElementById('registroTelefono').value,
                 direccion: document.getElementById('registroDireccion').value
             };
 
@@ -1664,26 +1659,21 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    // Guardar datos del usuario
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userName', data.usuario.nombre);
                     localStorage.setItem('userId', data.usuario.id);
                     
-                    // Actualizar la UI
                     document.getElementById('userSession').style.display = 'flex';
                     document.getElementById('authLinks').style.display = 'none';
                     document.getElementById('userName').textContent = data.usuario.nombre;
+                    document.getElementById('btnCerrarSesion').style.display = 'block';
                     
-                    // Cerrar el modal
                     const modal = bootstrap.Modal.getInstance(document.getElementById('registroModal'));
                     modal.hide();
                     
-                    // Limpiar el formulario
                     e.target.reset();
-                    
-                    // Mostrar el contenedor de facturas vacío
                     document.getElementById('facturasContainer').style.display = 'block';
-                    cargarFacturas(); // Ahora carga las facturas después del registro
+                    cargarFacturas();
                     
                     alert('Registro exitoso');
                 } else {
@@ -1793,11 +1783,13 @@
             }
         }
 
-        // Modificar la función de logout para limpiar todo
+        // Modificar la función de cerrar sesión
         function cerrarSesion() {
             localStorage.clear();
+            document.getElementById('userSession').style.display = 'none';
+            document.getElementById('authLinks').style.display = 'flex';
+            document.getElementById('btnCerrarSesion').style.display = 'none';
             window.location.href = '/';
-            setTimeout(() => window.location.reload(), 100);
         }
 
         // Verificar si hay un usuario logueado al cargar la página
@@ -1809,10 +1801,12 @@
                 document.getElementById('userSession').style.display = 'flex';
                 document.getElementById('authLinks').style.display = 'none';
                 document.getElementById('userName').textContent = userName;
-                cargarFacturas(); // Ahora carga las facturas al cargar la página si hay sesión
+                document.getElementById('btnCerrarSesion').style.display = 'block';
+                cargarFacturas();
             } else {
                 document.getElementById('userSession').style.display = 'none';
                 document.getElementById('authLinks').style.display = 'flex';
+                document.getElementById('btnCerrarSesion').style.display = 'none';
             }
         });
 
