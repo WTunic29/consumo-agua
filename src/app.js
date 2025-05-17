@@ -29,6 +29,9 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Configurar middleware para el webhook de PayPal
+app.use('/pagos/webhook', express.raw({type: 'application/json'}));
+
 // Rutas
 app.use('/auth', require('./routes/auth'));
 app.use('/pagos', require('./routes/pagos'));

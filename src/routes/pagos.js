@@ -12,16 +12,24 @@ let environment = new paypal.core.SandboxEnvironment(
 let client = new paypal.core.PayPalHttpClient(environment);
 
 // Endpoint para webhooks de PayPal
-router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+router.post('/webhook', async (req, res) => {
+    console.log('Webhook recibido - Headers:', req.headers);
+    console.log('Webhook recibido - Body:', req.body);
+
     try {
+        // Verificar que el evento sea de PayPal
+        if (!req.body || !req.body.event_type) {
+            console.log('Evento inválido recibido');
+            return res.status(400).json({ error: 'Evento inválido' });
+        }
+
         // Responder inmediatamente para evitar timeouts
         res.status(200).json({ received: true });
 
         const event = req.body;
-        console.log('Webhook recibido:', event);
+        console.log('Procesando evento:', event.event_type);
         
-        // Verificar que el evento sea de PayPal
-        if (event.event_type && event.event_type.startsWith('PAYMENT.CAPTURE')) {
+        if (event.event_type.startsWith('PAYMENT.CAPTURE')) {
             // Procesar el evento según su tipo
             switch (event.event_type) {
                 case 'PAYMENT.CAPTURE.COMPLETED':
@@ -35,6 +43,7 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req, res
                                 'membresia.fechaInicio': new Date(),
                                 'membresia.fechaFin': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
                             });
+                            console.log('Membresía actualizada para usuario:', userId);
                         }
                     }
                     break;
@@ -53,6 +62,7 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req, res
                             await User.findByIdAndUpdate(userId, {
                                 'membresia.activa': false
                             });
+                            console.log('Membresía desactivada para usuario:', userId);
                         }
                     }
                     break;
@@ -60,6 +70,7 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req, res
         }
     } catch (error) {
         console.error('Error en webhook:', error);
+        // No enviamos error al cliente ya que ya respondimos con 200
     }
 });
 
