@@ -11,6 +11,38 @@ let environment = new paypal.core.SandboxEnvironment(
 );
 let client = new paypal.core.PayPalHttpClient(environment);
 
+// Endpoint para webhooks de PayPal
+router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+    try {
+        // Responder inmediatamente para evitar timeouts
+        res.status(200).json({ received: true });
+
+        const event = req.body;
+        console.log('Webhook recibido:', event);
+        
+        // Verificar que el evento sea de PayPal
+        if (event.event_type && event.event_type.startsWith('PAYMENT.CAPTURE')) {
+            // Procesar el evento según su tipo
+            switch (event.event_type) {
+                case 'PAYMENT.CAPTURE.COMPLETED':
+                    console.log('Pago completado:', event.resource);
+                    break;
+                case 'PAYMENT.CAPTURE.DENIED':
+                    console.log('Pago denegado:', event.resource);
+                    break;
+                case 'PAYMENT.CAPTURE.PENDING':
+                    console.log('Pago pendiente:', event.resource);
+                    break;
+                case 'PAYMENT.CAPTURE.REFUNDED':
+                    console.log('Pago reembolsado:', event.resource);
+                    break;
+            }
+        }
+    } catch (error) {
+        console.error('Error en webhook:', error);
+    }
+});
+
 // Crear orden de PayPal
 router.post('/crear-orden', auth, async (req, res) => {
     try {
@@ -66,42 +98,6 @@ router.post('/capturar/:orderId', auth, async (req, res) => {
     } catch (error) {
         console.error('Error al capturar pago:', error);
         res.status(500).json({ error: 'Error al procesar el pago' });
-    }
-});
-
-// Endpoint para webhooks de PayPal
-router.post('/webhook', async (req, res) => {
-    try {
-        const event = req.body;
-        
-        // Verificar que el evento sea de PayPal
-        if (event.event_type.startsWith('PAYMENT.CAPTURE')) {
-            // Procesar el evento según su tipo
-            switch (event.event_type) {
-                case 'PAYMENT.CAPTURE.COMPLETED':
-                    // Pago completado
-                    console.log('Pago completado:', event.resource);
-                    // Aquí puedes actualizar el estado en tu base de datos
-                    break;
-                case 'PAYMENT.CAPTURE.DENIED':
-                    // Pago denegado
-                    console.log('Pago denegado:', event.resource);
-                    break;
-                case 'PAYMENT.CAPTURE.PENDING':
-                    // Pago pendiente
-                    console.log('Pago pendiente:', event.resource);
-                    break;
-                case 'PAYMENT.CAPTURE.REFUNDED':
-                    // Pago reembolsado
-                    console.log('Pago reembolsado:', event.resource);
-                    break;
-            }
-        }
-        
-        res.status(200).json({ received: true });
-    } catch (error) {
-        console.error('Error en webhook:', error);
-        res.status(500).json({ error: 'Error procesando webhook' });
     }
 });
 
