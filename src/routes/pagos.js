@@ -26,6 +26,17 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req, res
             switch (event.event_type) {
                 case 'PAYMENT.CAPTURE.COMPLETED':
                     console.log('Pago completado:', event.resource);
+                    // Actualizar estado de membresía si es necesario
+                    if (event.resource.custom_id) {
+                        const [userId, tipo] = event.resource.custom_id.split('_');
+                        if (tipo === 'membresia') {
+                            await User.findByIdAndUpdate(userId, {
+                                'membresia.activa': true,
+                                'membresia.fechaInicio': new Date(),
+                                'membresia.fechaFin': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                            });
+                        }
+                    }
                     break;
                 case 'PAYMENT.CAPTURE.DENIED':
                     console.log('Pago denegado:', event.resource);
@@ -35,6 +46,15 @@ router.post('/webhook', express.raw({type: 'application/json'}), async (req, res
                     break;
                 case 'PAYMENT.CAPTURE.REFUNDED':
                     console.log('Pago reembolsado:', event.resource);
+                    // Actualizar estado de membresía si es necesario
+                    if (event.resource.custom_id) {
+                        const [userId, tipo] = event.resource.custom_id.split('_');
+                        if (tipo === 'membresia') {
+                            await User.findByIdAndUpdate(userId, {
+                                'membresia.activa': false
+                            });
+                        }
+                    }
                     break;
             }
         }
@@ -48,6 +68,16 @@ router.post('/crear-orden', auth, async (req, res) => {
     try {
         const { monto, tipo, plan } = req.body;
         
+        // Verificar si el usuario ya tiene una membresía activa
+        if (tipo === 'membresia') {
+            const usuario = await User.findById(req.user._id);
+            if (usuario.membresia && usuario.membresia.activa) {
+                return res.status(400).json({ 
+                    error: 'Ya tienes una membresía activa' 
+                });
+            }
+        }
+
         let request = new paypal.orders.OrdersCreateRequest();
         request.prefer("return=representation");
         request.requestBody({
@@ -57,7 +87,8 @@ router.post('/crear-orden', auth, async (req, res) => {
                     currency_code: 'USD',
                     value: monto
                 },
-                description: tipo === 'donacion' ? 'Donación' : `Membresía ${plan}`
+                description: tipo === 'donacion' ? 'Donación' : `Membresía ${plan}`,
+                custom_id: tipo === 'membresia' ? `${req.user._id}_membresia` : undefined
             }],
             application_context: {
                 return_url: `${process.env.BASE_URL}/pagos/exito`,
@@ -86,6 +117,7 @@ router.post('/capturar/:orderId', auth, async (req, res) => {
         if (tipo === 'membresia') {
             await User.findByIdAndUpdate(req.user._id, {
                 'membresia.plan': plan,
+                'membresia.activa': true,
                 'membresia.fechaInicio': new Date(),
                 'membresia.fechaFin': new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 días
             });

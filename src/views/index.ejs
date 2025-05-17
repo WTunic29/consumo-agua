@@ -1908,7 +1908,7 @@
         });
 
         // Función para procesar donación con PayPal
-        async function procesarDonacionPayPal(monto, tipo = 'donacion') {
+        async function procesarDonacionPayPal(monto) {
             try {
                 const response = await fetch('/pagos/crear-orden', {
                     method: 'POST',
@@ -1916,35 +1916,139 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
-                    body: JSON.stringify({ monto, tipo })
+                    body: JSON.stringify({
+                        monto: monto.toString(),
+                        tipo: 'donacion'
+                    })
                 });
 
                 const data = await response.json();
                 
-                // Inicializar PayPal
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Inicializar botones de PayPal
                 paypal.Buttons({
-                    createOrder: () => data.id,
-                    onApprove: async (data, actions) => {
-                        const capture = await fetch(`/pagos/capturar/${data.orderID}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('token')}`
-                            },
-                            body: JSON.stringify({ tipo })
-                        });
-                        
-                        const result = await capture.json();
-                        if (result.mensaje) {
-                            mostrarMensaje('¡Gracias por tu donación!', false);
+                    createOrder: function() {
+                        return data.id;
+                    },
+                    onApprove: async function(data, actions) {
+                        try {
+                            const response = await fetch(`/pagos/capturar/${data.orderID}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: JSON.stringify({
+                                    tipo: 'donacion'
+                                })
+                            });
+
+                            const result = await response.json();
+                            if (result.error) {
+                                alert(result.error);
+                            } else {
+                                alert('¡Gracias por tu donación!');
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error al procesar el pago');
                         }
                     }
                 }).render('#paypal-button-container');
             } catch (error) {
-                console.error('Error al procesar donación:', error);
-                mostrarMensaje('Error al procesar el pago', true);
+                console.error('Error:', error);
+                alert('Error al procesar la donación');
             }
         }
+
+        // Función para procesar membresía con PayPal
+        async function procesarMembresiaPayPal(plan, monto) {
+            try {
+                const response = await fetch('/pagos/crear-orden', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        monto: monto.toString(),
+                        tipo: 'membresia',
+                        plan: plan
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Inicializar botones de PayPal
+                paypal.Buttons({
+                    createOrder: function() {
+                        return data.id;
+                    },
+                    onApprove: async function(data, actions) {
+                        try {
+                            const response = await fetch(`/pagos/capturar/${data.orderID}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                },
+                                body: JSON.stringify({
+                                    tipo: 'membresia',
+                                    plan: plan
+                                })
+                            });
+
+                            const result = await response.json();
+                            if (result.error) {
+                                alert(result.error);
+                            } else {
+                                alert('¡Membresía activada exitosamente!');
+                                location.reload();
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            alert('Error al procesar el pago');
+                        }
+                    }
+                }).render('#paypal-button-container');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al procesar la membresía');
+            }
+        }
+
+        // Función para verificar estado de membresía
+        async function verificarMembresia() {
+            try {
+                const response = await fetch('/auth/perfil', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.membresia && data.membresia.activa) {
+                    document.querySelectorAll('.membresia-btn').forEach(btn => {
+                        btn.disabled = true;
+                        btn.textContent = 'Membresía Activa';
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        // Verificar membresía al cargar la página
+        document.addEventListener('DOMContentLoaded', verificarMembresia);
 
         // Función mejorada para filtrar facturas
         async function filtrarFacturas() {

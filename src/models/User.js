@@ -61,13 +61,14 @@ const userSchema = new mongoose.Schema({
     membresia: {
         plan: {
             type: String,
-            enum: ['gratuito', 'basico', 'pro', 'empresarial'],
-            default: 'gratuito'
+            enum: ['basico', 'premium', 'empresarial'],
+            default: 'basico'
         },
-        fechaInicio: {
-            type: Date,
-            default: Date.now
+        activa: {
+            type: Boolean,
+            default: false
         },
+        fechaInicio: Date,
         fechaFin: Date,
         estado: {
             type: String,
@@ -111,6 +112,8 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 // Middleware para hashear la contraseña antes de guardar
@@ -153,10 +156,7 @@ userSchema.methods.actualizarMembresia = async function(tipo, duracionMeses = 1)
 // Método para obtener beneficios según el tipo de membresía
 userSchema.methods.obtenerBeneficiosPorTipo = function(tipo) {
     const beneficios = {
-        gratuita: [
-            { tipo: 'basico', descripcion: 'Acceso a facturas básicas' }
-        ],
-        basica: [
+        basico: [
             { tipo: 'basico', descripcion: 'Acceso a facturas básicas' },
             { tipo: 'estadisticas', descripcion: 'Estadísticas de consumo' },
             { tipo: 'notificaciones', descripcion: 'Notificaciones personalizadas' }
@@ -167,10 +167,17 @@ userSchema.methods.obtenerBeneficiosPorTipo = function(tipo) {
             { tipo: 'notificaciones', descripcion: 'Notificaciones personalizadas' },
             { tipo: 'soporte', descripcion: 'Soporte prioritario' },
             { tipo: 'reportes', descripcion: 'Reportes avanzados' }
+        ],
+        empresarial: [
+            { tipo: 'basico', descripcion: 'Acceso a facturas básicas' },
+            { tipo: 'estadisticas', descripcion: 'Estadísticas de consumo' },
+            { tipo: 'notificaciones', descripcion: 'Notificaciones personalizadas' },
+            { tipo: 'soporte', descripcion: 'Soporte prioritario' },
+            { tipo: 'reportes', descripcion: 'Reportes avanzados' }
         ]
     };
 
-    return beneficios[tipo] || beneficios.gratuita;
+    return beneficios[tipo] || beneficios.basico;
 };
 
 module.exports = mongoose.model('User', userSchema);
