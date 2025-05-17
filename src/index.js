@@ -355,4 +355,6 @@ app.listen(port, '0.0.0.0', () => {
     console.log(`Servidor corriendo en puerto ${port}`);
 });
 
-module.exports = app;
+module.exports = app;c o n s t   a c u e d u c t o R o u t e s   =   r e q u i r e ( ' . / r o u t e s / a c u e d u c t o ' ) ;  
+ a p p . u s e ( ' / a p i / a c u e d u c t o ' ,   a c u e d u c t o R o u t e s ) ;  
+ 

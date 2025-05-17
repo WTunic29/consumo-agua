@@ -2,6 +2,17 @@
 
 Aplicación web para visualizar y analizar el consumo de agua en diferentes municipios (Bogotá, Soacha y Gachancipá), con sistema de autenticación y gestión de facturas personales.
 
+## Cambios Recientes
+
+### 2024-03-19
+- 🔄 Integración de datos de AcueductoDB
+- 🗺️ Implementación de modelo de datos para sectores
+- 🔒 Nuevas rutas API para gestión de sectores
+- 🎨 Mejoras en el sistema de alertas
+- 📊 Métricas de calidad del agua
+- 🔍 Optimización de búsquedas con índices
+- 🐛 Corrección de enlaces en el formulario de registro
+
 ## Características
 
 ### Visualización de Datos
