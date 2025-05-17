@@ -1907,7 +1907,46 @@
             cargarAlertas();
         });
 
-        // Función para filtrar facturas
+        // Función para procesar donación con PayPal
+        async function procesarDonacionPayPal(monto, tipo = 'donacion') {
+            try {
+                const response = await fetch('/pagos/crear-orden', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ monto, tipo })
+                });
+
+                const data = await response.json();
+                
+                // Inicializar PayPal
+                paypal.Buttons({
+                    createOrder: () => data.id,
+                    onApprove: async (data, actions) => {
+                        const capture = await fetch(`/pagos/capturar/${data.orderID}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            },
+                            body: JSON.stringify({ tipo })
+                        });
+                        
+                        const result = await capture.json();
+                        if (result.mensaje) {
+                            mostrarMensaje('¡Gracias por tu donación!', false);
+                        }
+                    }
+                }).render('#paypal-button-container');
+            } catch (error) {
+                console.error('Error al procesar donación:', error);
+                mostrarMensaje('Error al procesar el pago', true);
+            }
+        }
+
+        // Función mejorada para filtrar facturas
         async function filtrarFacturas() {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -1941,37 +1980,43 @@
 
                 const data = await response.json();
                 
-                // Actualizar la tabla
+                // Actualizar la tabla con animación
                 const tbody = document.getElementById('facturasTableBody');
-                tbody.innerHTML = '';
-
-                if (data.facturas && data.facturas.length > 0) {
-                    data.facturas.forEach(factura => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${factura.numeroFactura}</td>
-                            <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
-                            <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
-                            <td>$${factura.valores.total.toLocaleString()}</td>
-                            <td>
-                                <span class="badge bg-${getEstadoColor(factura.estado)}">
-                                    ${factura.estado}
-                                </span>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron facturas</td></tr>';
-                }
+                tbody.style.opacity = '0';
+                
+                setTimeout(() => {
+                    tbody.innerHTML = '';
+                    
+                    if (data.facturas && data.facturas.length > 0) {
+                        data.facturas.forEach(factura => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${factura.numeroFactura}</td>
+                                <td>${new Date(factura.fechaEmision).toLocaleDateString()}</td>
+                                <td>${factura.consumo.lecturaActual - factura.consumo.lecturaAnterior} m³</td>
+                                <td>$${factura.valores.total.toLocaleString()}</td>
+                                <td>
+                                    <span class="badge bg-${getEstadoColor(factura.estado)}">
+                                        ${factura.estado}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" onclick="editarFactura('${factura._id}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="eliminarFactura('${factura._id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron facturas</td></tr>';
+                    }
+                    
+                    tbody.style.opacity = '1';
+                }, 300);
 
                 // Actualizar información de paginación
                 if (data.paginacion) {
@@ -1985,6 +2030,36 @@
                 mostrarMensaje('Error al filtrar las facturas', true);
             }
         }
+
+        // Agregar estilos para animaciones
+        const style = document.createElement('style');
+        style.textContent = `
+            #facturasTableBody {
+                transition: opacity 0.3s ease;
+            }
+            
+            .badge {
+                transition: all 0.3s ease;
+            }
+            
+            .btn {
+                transition: transform 0.2s ease;
+            }
+            
+            .btn:hover {
+                transform: scale(1.1);
+            }
+            
+            .card {
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+        `;
+        document.head.appendChild(style);
 
         // Función para obtener el color del estado
         function getEstadoColor(estado) {

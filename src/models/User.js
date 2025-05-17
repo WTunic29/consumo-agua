@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
+    verificado: {
+        type: Boolean,
+        default: false
+    },
+    tokenVerificacion: String,
+    tokenExpiracion: Date,
     perfil: {
         telefono: String,
         direccion: {
@@ -40,6 +46,10 @@ const userSchema = new mongoose.Schema({
             web: {
                 type: Boolean,
                 default: true
+            },
+            push: {
+                type: Boolean,
+                default: true
             }
         }
     },
@@ -49,10 +59,10 @@ const userSchema = new mongoose.Schema({
         default: 'usuario'
     },
     membresia: {
-        tipo: {
+        plan: {
             type: String,
-            enum: ['gratuita', 'basica', 'premium'],
-            default: 'gratuita'
+            enum: ['gratuito', 'basico', 'pro', 'empresarial'],
+            default: 'gratuito'
         },
         fechaInicio: {
             type: Date,
@@ -96,6 +106,10 @@ const userSchema = new mongoose.Schema({
             type: String,
             default: '1.0'
         }
+    },
+    fechaCreacion: {
+        type: Date,
+        default: Date.now
     }
 });
 

@@ -1,53 +1,79 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+// Configurar el transporter de nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+    }
+});
+
+// Función para enviar correo de verificación
+async function enviarCorreoVerificacion(email, token) {
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Verifica tu cuenta - Sistema de Consumo de Agua',
+        html: `
+            <h1>Bienvenido al Sistema de Consumo de Agua</h1>
+            <p>Por favor, verifica tu cuenta haciendo clic en el siguiente enlace:</p>
+            <a href="${process.env.BASE_URL}/auth/verificar/${token}">Verificar cuenta</a>
+            <p>Este enlace expirará en 24 horas.</p>
+        `
+    };
+
+    await transporter.sendMail(mailOptions);
+}
 
 // Ruta de registro
 router.post('/registro', async (req, res) => {
     try {
-        const { nombre, apellido, email, password, telefono, direccion } = req.body;
+        const { email, password, nombre, apellido } = req.body;
 
         // Verificar si el usuario ya existe
-        const usuarioExistente = await User.findOne({ email });
-        if (usuarioExistente) {
-            return res.status(400).json({ error: 'El email ya está registrado' });
+        let usuario = await User.findOne({ email });
+        if (usuario) {
+            return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
+        // Crear token de verificación
+        const tokenVerificacion = crypto.randomBytes(32).toString('hex');
+        const tokenExpiracion = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
+
         // Crear nuevo usuario
-        const usuario = new User({
-            nombre,
-            apellido,
+        usuario = new User({
             email,
             password,
-            perfil: {
-                telefono,
-                direccion
-            }
+            nombre,
+            apellido,
+            tokenVerificacion,
+            tokenExpiracion,
+            verificado: false
         });
+
+        // Encriptar contraseña
+        const salt = await bcrypt.genSalt(10);
+        usuario.password = await bcrypt.hash(password, salt);
 
         await usuario.save();
 
-        // Generar token
-        const token = jwt.sign(
-            { userId: usuario._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+        // Enviar correo de verificación
+        await enviarCorreoVerificacion(email, tokenVerificacion);
 
         res.status(201).json({
-            mensaje: 'Usuario registrado exitosamente',
-            token,
-            usuario: {
-                id: usuario._id,
-                nombre: usuario.nombre,
-                email: usuario.email
-            }
+            mensaje: 'Usuario registrado. Por favor, verifica tu correo electrónico.'
         });
     } catch (error) {
         console.error('Error en registro:', error);
-        res.status(500).json({ error: 'Error al registrar usuario' });
+        res.status(500).json({ error: 'Error en el servidor' });
     }
 });
 
@@ -115,6 +141,30 @@ router.get('/login', (req, res) => {
 // Ruta para mostrar el formulario de registro
 router.get('/registro', (req, res) => {
     res.render('registro', { title: 'Registro de Usuario' });
+});
+
+// Verificación de cuenta
+router.get('/verificar/:token', async (req, res) => {
+    try {
+        const usuario = await User.findOne({
+            tokenVerificacion: req.params.token,
+            tokenExpiracion: { $gt: Date.now() }
+        });
+
+        if (!usuario) {
+            return res.status(400).json({ error: 'Token inválido o expirado' });
+        }
+
+        usuario.verificado = true;
+        usuario.tokenVerificacion = undefined;
+        usuario.tokenExpiracion = undefined;
+        await usuario.save();
+
+        res.json({ mensaje: 'Cuenta verificada exitosamente' });
+    } catch (error) {
+        console.error('Error en verificación:', error);
+        res.status(500).json({ error: 'Error en el servidor' });
+    }
 });
 
 module.exports = router; 

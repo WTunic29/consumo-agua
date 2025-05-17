@@ -102,9 +102,9 @@ facturaSchema.index({ usuario: 1, fechaEmision: -1 });
 facturaSchema.pre('save', async function(next) {
     try {
         // Calcular consumo total
-        if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
-            this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
-        }
+    if (this.consumo.lecturaActual && this.consumo.lecturaAnterior) {
+        this.consumo.consumoTotal = this.consumo.lecturaActual - this.consumo.lecturaAnterior;
+    }
 
         // Calcular total
         if (this.valores) {
@@ -125,7 +125,7 @@ facturaSchema.pre('save', async function(next) {
             };
         }
 
-        next();
+    next();
     } catch (error) {
         next(error);
     }
