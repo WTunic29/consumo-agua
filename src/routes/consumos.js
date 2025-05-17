@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Consumo = require('../models/Consumo');
+const Stats = require('../models/Stats');
 const auth = require('../middleware/auth');
 
 // Obtener todos los consumos
@@ -69,6 +70,38 @@ router.delete('/:id', auth, async (req, res) => {
     } catch (error) {
         console.error('Error al eliminar consumo:', error);
         res.status(500).json({ error: 'Error al eliminar el dato de consumo' });
+    }
+});
+
+// Ruta para obtener datos en formato GeoJSON para ArcGIS
+router.get('/arcgis/geojson', async (req, res) => {
+    try {
+        const stats = await Stats.find({}).sort({ fecha: -1 }).lean();
+        
+        const geojson = {
+            type: 'FeatureCollection',
+            features: stats.map(stat => ({
+                type: 'Feature',
+                geometry: {
+                    type: 'Point',
+                    coordinates: [stat.coordenadas.lng, stat.coordenadas.lat]
+                },
+                properties: {
+                    zona: stat.zona,
+                    consumo: stat.consumo,
+                    fecha: stat.fecha,
+                    eficiencia_hidrica: stat.metricas_sostenibilidad?.eficiencia_hidrica || 0,
+                    consumo_per_capita: stat.metricas_sostenibilidad?.consumo_per_capita || 0,
+                    ahorro_mensual: stat.metricas_sostenibilidad?.ahorro_mensual || 0,
+                    alertas: stat.alertas || []
+                }
+            }))
+        };
+
+        res.json(geojson);
+    } catch (error) {
+        console.error('Error al generar GeoJSON:', error);
+        res.status(500).json({ error: 'Error al generar datos para ArcGIS' });
     }
 });
 
