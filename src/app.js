@@ -19,6 +19,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/auth', require('./routes/auth'));
 app.use('/pagos', require('./routes/pagos'));
 app.use('/facturas', require('./routes/facturas'));
+app.use('/consumos', require('./routes/consumos'));
 
 // Ruta principal
 app.get('/', (req, res) => {
