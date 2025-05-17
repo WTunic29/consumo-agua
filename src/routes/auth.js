@@ -54,6 +54,36 @@ async function enviarCorreoVerificacion(email, token) {
     }
 }
 
+// Función para enviar correo de recuperación de contraseña
+async function enviarCorreoRecuperacion(email, token) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        throw new Error('Configuración de correo electrónico incompleta');
+    }
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Recuperación de Contraseña - Sistema de Consumo de Agua',
+        html: `
+            <h1>Recuperación de Contraseña</h1>
+            <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+            <a href="${process.env.BASE_URL}/auth/reset-password/${token}">Restablecer contraseña</a>
+            <p>Este enlace expirará en 1 hora.</p>
+            <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+        `
+    };
+
+    try {
+        console.log('Intentando enviar correo de recuperación a:', email);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Correo de recuperación enviado exitosamente:', info.messageId);
+        return info;
+    } catch (error) {
+        console.error('Error al enviar correo de recuperación:', error);
+        throw new Error('Error al enviar el correo de recuperación: ' + error.message);
+    }
+}
+
 // Ruta de registro
 router.post('/registro', async (req, res) => {
     try {
@@ -254,21 +284,16 @@ router.post('/recuperar-contrasena', async (req, res) => {
         await usuario.save();
 
         // Enviar correo de recuperación
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: 'Recuperación de Contraseña - Sistema de Consumo de Agua',
-            html: `
-                <h1>Recuperación de Contraseña</h1>
-                <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
-                <a href="${process.env.BASE_URL}/auth/reset-password/${usuario.resetPasswordToken}">Restablecer contraseña</a>
-                <p>Este enlace expirará en 1 hora.</p>
-                <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        res.json({ mensaje: 'Se ha enviado un enlace de recuperación a tu correo electrónico' });
+        try {
+            await enviarCorreoRecuperacion(email, usuario.resetPasswordToken);
+            res.json({ mensaje: 'Se ha enviado un enlace de recuperación a tu correo electrónico' });
+        } catch (error) {
+            console.error('Error al enviar correo de recuperación:', error);
+            res.status(500).json({ 
+                error: 'Error al enviar el correo de recuperación. Por favor, verifica que el correo electrónico sea correcto.',
+                detalles: error.message
+            });
+        }
     } catch (error) {
         console.error('Error en recuperación de contraseña:', error);
         res.status(500).json({ error: 'Error al procesar la solicitud' });

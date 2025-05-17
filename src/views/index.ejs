@@ -878,6 +878,9 @@
                             <label for="loginPassword" class="form-label">Contraseña</label>
                             <input type="password" class="form-control" id="loginPassword" required>
                         </div>
+                        <div class="mb-3">
+                            <a href="#" onclick="mostrarModalRecuperacion()">¿Olvidaste tu contraseña?</a>
+                        </div>
                         <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
                     </form>
                 </div>
@@ -1098,6 +1101,28 @@
                         </div>
                         
                         <button type="submit" class="btn btn-primary">Proceder al pago</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Recuperación de Contraseña -->
+    <div class="modal fade" id="recuperacionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Recuperar Contraseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="recuperacionForm">
+                        <div class="mb-3">
+                            <label for="recuperacionEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="recuperacionEmail" required>
+                            <div class="form-text">Te enviaremos un enlace para restablecer tu contraseña.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar enlace</button>
                     </form>
                 </div>
             </div>
@@ -2583,6 +2608,44 @@
                 timeout = setTimeout(later, wait);
             };
         }
+
+        // Agregar las funciones de recuperación de contraseña
+        function mostrarModalRecuperacion() {
+            const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            loginModal.hide();
+            
+            const recuperacionModal = new bootstrap.Modal(document.getElementById('recuperacionModal'));
+            recuperacionModal.show();
+        }
+
+        document.getElementById('recuperacionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('recuperacionEmail').value;
+            
+            try {
+                const response = await fetch('/auth/recuperar-contrasena', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Se ha enviado un enlace de recuperación a tu correo electrónico.');
+                    const recuperacionModal = bootstrap.Modal.getInstance(document.getElementById('recuperacionModal'));
+                    recuperacionModal.hide();
+                } else {
+                    alert(data.error || 'Error al procesar la solicitud');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al conectar con el servidor');
+            }
+        });
 
     </script>
 </body>
