@@ -2,11 +2,25 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// Configuración de rate limiter
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100 // límite de 100 peticiones por ventana
+});
+
+// Middleware de seguridad y optimización
+app.use(helmet()); // Seguridad HTTP
+app.use(morgan('dev')); // Logging
+app.use(compression()); // Compresión de respuestas
+app.use(limiter); // Rate limiting
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
