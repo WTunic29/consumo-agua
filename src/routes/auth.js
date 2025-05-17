@@ -44,6 +44,10 @@ router.post('/registro', async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
+        // Generar token de verificación
+        const tokenVerificacion = crypto.randomBytes(32).toString('hex');
+        const tokenExpiracion = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
+
         // Crear nuevo usuario
         usuario = new User({
             email,
@@ -52,7 +56,9 @@ router.post('/registro', async (req, res) => {
             apellido,
             telefono,
             direccion,
-            verificado: true // Temporalmente establecemos como verificado
+            verificado: false,
+            tokenVerificacion,
+            tokenExpiracion
         });
 
         // Encriptar contraseña
@@ -61,22 +67,23 @@ router.post('/registro', async (req, res) => {
 
         await usuario.save();
 
-        // Generar token
-        const token = jwt.sign(
-            { userId: usuario._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.status(201).json({
-            token,
-            usuario: {
-                id: usuario._id,
-                nombre: usuario.nombre,
-                email: usuario.email,
-                role: usuario.role
-            }
-        });
+        // Enviar correo de verificación
+        try {
+            await enviarCorreoVerificacion(email, tokenVerificacion);
+            res.status(201).json({
+                mensaje: 'Usuario registrado exitosamente. Por favor, verifica tu correo electrónico.',
+                usuario: {
+                    id: usuario._id,
+                    nombre: usuario.nombre,
+                    email: usuario.email
+                }
+            });
+        } catch (error) {
+            console.error('Error al enviar correo de verificación:', error);
+            // Si falla el envío del correo, eliminamos el usuario
+            await User.findByIdAndDelete(usuario._id);
+            res.status(500).json({ error: 'Error al enviar el correo de verificación' });
+        }
     } catch (error) {
         console.error('Error en registro:', error);
         res.status(500).json({ error: 'Error en el servidor' });
@@ -92,6 +99,11 @@ router.post('/login', async (req, res) => {
         const usuario = await User.findOne({ email });
         if (!usuario) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+
+        // Verificar si el usuario está verificado
+        if (!usuario.verificado) {
+            return res.status(401).json({ error: 'Por favor, verifica tu correo electrónico antes de iniciar sesión' });
         }
 
         // Verificar contraseña
@@ -126,27 +138,37 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Ruta para obtener perfil
-router.get('/perfil', auth, async (req, res) => {
-    try {
-        const usuario = await User.findById(req.user._id)
-            .select('-password')
-            .populate('facturas');
-        
-        res.json(usuario);
-    } catch (error) {
-        res.status(500).json({ error: 'Error al obtener perfil' });
-    }
+// Ruta para mostrar el formulario de registro
+router.get('/registro', (req, res) => {
+    res.render('registro', { 
+        title: 'Registro de Usuario',
+        error: null
+    });
 });
 
 // Ruta para mostrar el formulario de login
 router.get('/login', (req, res) => {
-    res.render('login', { title: 'Iniciar Sesión' });
+    res.render('login', { 
+        title: 'Iniciar Sesión',
+        error: null
+    });
 });
 
-// Ruta para mostrar el formulario de registro
-router.get('/registro', (req, res) => {
-    res.render('registro', { title: 'Registro de Usuario' });
+// Ruta para mostrar el perfil del usuario
+router.get('/perfil', auth, async (req, res) => {
+    try {
+        const usuario = await User.findById(req.user.userId).select('-password');
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
+        res.render('perfil', { 
+            title: 'Mi Perfil',
+            usuario
+        });
+    } catch (error) {
+        console.error('Error al obtener perfil:', error);
+        res.status(500).json({ error: 'Error al obtener el perfil' });
+    }
 });
 
 // Verificación de cuenta
@@ -158,7 +180,10 @@ router.get('/verificar/:token', async (req, res) => {
         });
 
         if (!usuario) {
-            return res.status(400).json({ error: 'Token inválido o expirado' });
+            return res.render('verificacion', {
+                title: 'Verificación de Cuenta',
+                error: 'Token inválido o expirado'
+            });
         }
 
         usuario.verificado = true;
@@ -166,10 +191,16 @@ router.get('/verificar/:token', async (req, res) => {
         usuario.tokenExpiracion = undefined;
         await usuario.save();
 
-        res.json({ mensaje: 'Cuenta verificada exitosamente' });
+        res.render('verificacion', {
+            title: 'Verificación de Cuenta',
+            mensaje: 'Cuenta verificada exitosamente'
+        });
     } catch (error) {
         console.error('Error en verificación:', error);
-        res.status(500).json({ error: 'Error en el servidor' });
+        res.render('verificacion', {
+            title: 'Verificación de Cuenta',
+            error: 'Error al verificar la cuenta'
+        });
     }
 });
 

@@ -2072,6 +2072,8 @@
                 if (consumoMin) params.append('consumoMin', consumoMin);
                 if (consumoMax) params.append('consumoMax', consumoMax);
 
+                console.log('Enviando filtros:', params.toString());
+
                 const response = await fetch(`/facturas?${params.toString()}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -2083,6 +2085,7 @@
                 }
 
                 const data = await response.json();
+                console.log('Respuesta del servidor:', data);
                 
                 // Actualizar la tabla con animación
                 const tbody = document.getElementById('facturasTableBody');
@@ -2312,6 +2315,8 @@
 
         // Agregar event listeners para los filtros
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('Configurando event listeners para filtros...');
+            
             const filterEstado = document.getElementById('filterEstado');
             const searchFactura = document.getElementById('searchFactura');
             const fechaDesde = document.getElementById('fechaDesde');
@@ -2319,12 +2324,56 @@
             const consumoMin = document.getElementById('consumoMin');
             const consumoMax = document.getElementById('consumoMax');
 
-            if (filterEstado) filterEstado.addEventListener('change', filtrarFacturas);
-            if (searchFactura) searchFactura.addEventListener('input', debounce(filtrarFacturas, 500));
-            if (fechaDesde) fechaDesde.addEventListener('change', filtrarFacturas);
-            if (fechaHasta) fechaHasta.addEventListener('change', filtrarFacturas);
-            if (consumoMin) consumoMin.addEventListener('change', filtrarFacturas);
-            if (consumoMax) consumoMax.addEventListener('change', filtrarFacturas);
+            if (filterEstado) {
+                console.log('Agregando listener para filterEstado');
+                filterEstado.addEventListener('change', () => {
+                    console.log('Estado cambiado:', filterEstado.value);
+                    filtrarFacturas();
+                });
+            }
+
+            if (searchFactura) {
+                console.log('Agregando listener para searchFactura');
+                searchFactura.addEventListener('input', debounce(() => {
+                    console.log('Búsqueda cambiada:', searchFactura.value);
+                    filtrarFacturas();
+                }, 500));
+            }
+
+            if (fechaDesde) {
+                console.log('Agregando listener para fechaDesde');
+                fechaDesde.addEventListener('change', () => {
+                    console.log('Fecha desde cambiada:', fechaDesde.value);
+                    filtrarFacturas();
+                });
+            }
+
+            if (fechaHasta) {
+                console.log('Agregando listener para fechaHasta');
+                fechaHasta.addEventListener('change', () => {
+                    console.log('Fecha hasta cambiada:', fechaHasta.value);
+                    filtrarFacturas();
+                });
+            }
+
+            if (consumoMin) {
+                console.log('Agregando listener para consumoMin');
+                consumoMin.addEventListener('change', () => {
+                    console.log('Consumo mínimo cambiado:', consumoMin.value);
+                    filtrarFacturas();
+                });
+            }
+
+            if (consumoMax) {
+                console.log('Agregando listener para consumoMax');
+                consumoMax.addEventListener('change', () => {
+                    console.log('Consumo máximo cambiado:', consumoMax.value);
+                    filtrarFacturas();
+                });
+            }
+
+            // Cargar facturas inicialmente
+            filtrarFacturas();
         });
 
         // Función debounce para evitar múltiples llamadas
