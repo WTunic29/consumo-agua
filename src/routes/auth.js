@@ -16,8 +16,21 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Verificar la configuración del transporter
+transporter.verify(function(error, success) {
+    if (error) {
+        console.error('Error en la configuración del correo:', error);
+    } else {
+        console.log('Servidor de correo listo para enviar mensajes');
+    }
+});
+
 // Función para enviar correo de verificación
 async function enviarCorreoVerificacion(email, token) {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+        throw new Error('Configuración de correo electrónico incompleta');
+    }
+
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
@@ -30,7 +43,15 @@ async function enviarCorreoVerificacion(email, token) {
         `
     };
 
-    await transporter.sendMail(mailOptions);
+    try {
+        console.log('Intentando enviar correo a:', email);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Correo enviado exitosamente:', info.messageId);
+        return info;
+    } catch (error) {
+        console.error('Error al enviar correo:', error);
+        throw new Error('Error al enviar el correo de verificación: ' + error.message);
+    }
 }
 
 // Ruta de registro
@@ -82,11 +103,17 @@ router.post('/registro', async (req, res) => {
             console.error('Error al enviar correo de verificación:', error);
             // Si falla el envío del correo, eliminamos el usuario
             await User.findByIdAndDelete(usuario._id);
-            res.status(500).json({ error: 'Error al enviar el correo de verificación' });
+            res.status(500).json({ 
+                error: 'Error al enviar el correo de verificación. Por favor, verifica que el correo electrónico sea correcto.',
+                detalles: error.message
+            });
         }
     } catch (error) {
         console.error('Error en registro:', error);
-        res.status(500).json({ error: 'Error en el servidor' });
+        res.status(500).json({ 
+            error: 'Error en el servidor',
+            detalles: error.message
+        });
     }
 });
 
