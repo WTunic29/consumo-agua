@@ -1,11 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const path = require('path');
-
-// Cargar variables de entorno
-dotenv.config();
+require('dotenv').config();
 
 const app = express();
 
@@ -25,19 +22,16 @@ app.use('/facturas', require('./routes/facturas'));
 
 // Ruta principal
 app.get('/', (req, res) => {
-    res.render('index', { 
-        title: 'Sistema de Consumo de Agua',
-        consumos: [] // Aquí puedes agregar datos de consumo si los tienes
-    });
+    res.render('index');
 });
 
 // Manejo de errores
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ error: 'Error en el servidor' });
+    res.status(500).json({ error: 'Algo salió mal!' });
 });
 
-// Conectar a MongoDB
+// Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Conectado a MongoDB'))
     .catch(err => console.error('Error conectando a MongoDB:', err));
