@@ -74,63 +74,72 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card p-4">
-            <h2 class="text-center mb-4">Recuperar Contraseña</h2>
-            <div class="alert alert-danger" id="errorAlert" role="alert"></div>
-            <div class="alert alert-success" id="successAlert" role="alert"></div>
-            <form id="recoveryForm">
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
+    <%- include('partials/header') %>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title text-center mb-4">Recuperar Contraseña</h2>
+                        
+                        <div class="alert alert-danger" id="errorAlert" style="display: none;"></div>
+                        <div class="alert alert-success" id="successAlert" style="display: none;"></div>
+
+                        <form id="recuperarForm">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Enviar enlace de recuperación</button>
+                                <a href="/auth/login" class="btn btn-outline-secondary">Volver al login</a>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">Enviar enlace de recuperación</button>
-                </div>
-            </form>
-            <div class="text-center mt-3">
-                <p>¿Recordaste tu contraseña? <a href="/login">Inicia sesión</a></p>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const errorAlert = document.getElementById('errorAlert');
-            const successAlert = document.getElementById('successAlert');
-            errorAlert.style.display = 'none';
-            successAlert.style.display = 'none';
-            errorAlert.textContent = '';
-            successAlert.textContent = '';
+    document.getElementById('recuperarForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const errorAlert = document.getElementById('errorAlert');
+        const successAlert = document.getElementById('successAlert');
+        errorAlert.style.display = 'none';
+        successAlert.style.display = 'none';
 
-            const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value;
 
-            try {
-                const response = await fetch('/auth/recuperar-contrasena', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email })
-                });
+        try {
+            const response = await fetch('/auth/recuperar-contrasena', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
+            });
 
-                const data = await response.json();
+            const data = await response.json();
 
-                if (response.ok) {
-                    successAlert.textContent = 'Se ha enviado un enlace de recuperación a tu correo electrónico';
-                    successAlert.style.display = 'block';
-                } else {
-                    errorAlert.textContent = data.error || 'Error al procesar la solicitud';
-                    errorAlert.style.display = 'block';
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                errorAlert.textContent = 'Error al conectar con el servidor';
+            if (response.ok) {
+                successAlert.textContent = 'Se ha enviado un enlace de recuperación a tu correo electrónico.';
+                successAlert.style.display = 'block';
+                document.getElementById('recuperarForm').reset();
+            } else {
+                errorAlert.textContent = data.error || 'Error al procesar la solicitud';
                 errorAlert.style.display = 'block';
             }
-        });
+        } catch (error) {
+            console.error('Error:', error);
+            errorAlert.textContent = 'Error al conectar con el servidor';
+            errorAlert.style.display = 'block';
+        }
+    });
     </script>
+
+    <%- include('partials/footer') %>
 </body>
 </html> 

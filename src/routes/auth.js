@@ -204,4 +204,105 @@ router.get('/verificar/:token', async (req, res) => {
     }
 });
 
+// Ruta para mostrar el formulario de recuperación de contraseña
+router.get('/recuperar-contrasena', (req, res) => {
+    res.render('recuperar-contrasena', {
+        title: 'Recuperar Contraseña',
+        error: null
+    });
+});
+
+// Ruta para procesar la solicitud de recuperación de contraseña
+router.post('/recuperar-contrasena', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const usuario = await User.findOne({ email });
+
+        if (!usuario) {
+            return res.status(404).json({ error: 'No existe una cuenta con ese correo electrónico' });
+        }
+
+        // Generar token de recuperación
+        usuario.generatePasswordReset();
+        await usuario.save();
+
+        // Enviar correo de recuperación
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Recuperación de Contraseña - Sistema de Consumo de Agua',
+            html: `
+                <h1>Recuperación de Contraseña</h1>
+                <p>Has solicitado restablecer tu contraseña. Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+                <a href="${process.env.BASE_URL}/auth/reset-password/${usuario.resetPasswordToken}">Restablecer contraseña</a>
+                <p>Este enlace expirará en 1 hora.</p>
+                <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ mensaje: 'Se ha enviado un enlace de recuperación a tu correo electrónico' });
+    } catch (error) {
+        console.error('Error en recuperación de contraseña:', error);
+        res.status(500).json({ error: 'Error al procesar la solicitud' });
+    }
+});
+
+// Ruta para mostrar el formulario de restablecimiento de contraseña
+router.get('/reset-password/:token', async (req, res) => {
+    try {
+        const usuario = await User.findOne({
+            resetPasswordToken: req.params.token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!usuario) {
+            return res.render('reset-password', {
+                title: 'Restablecer Contraseña',
+                error: 'El enlace de recuperación es inválido o ha expirado',
+                token: null
+            });
+        }
+
+        res.render('reset-password', {
+            title: 'Restablecer Contraseña',
+            error: null,
+            token: req.params.token
+        });
+    } catch (error) {
+        console.error('Error al verificar token:', error);
+        res.render('reset-password', {
+            title: 'Restablecer Contraseña',
+            error: 'Error al procesar la solicitud',
+            token: null
+        });
+    }
+});
+
+// Ruta para procesar el restablecimiento de contraseña
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const usuario = await User.findOne({
+            resetPasswordToken: req.params.token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!usuario) {
+            return res.status(400).json({ error: 'El enlace de recuperación es inválido o ha expirado' });
+        }
+
+        // Actualizar contraseña
+        usuario.password = password;
+        usuario.resetPasswordToken = undefined;
+        usuario.resetPasswordExpires = undefined;
+        await usuario.save();
+
+        res.json({ mensaje: 'Contraseña actualizada exitosamente' });
+    } catch (error) {
+        console.error('Error al restablecer contraseña:', error);
+        res.status(500).json({ error: 'Error al restablecer la contraseña' });
+    }
+});
+
 module.exports = router; 
