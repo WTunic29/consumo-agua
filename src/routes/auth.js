@@ -36,7 +36,7 @@ async function enviarCorreoVerificacion(email, token) {
 // Ruta de registro
 router.post('/registro', async (req, res) => {
     try {
-        const { email, password, nombre, apellido } = req.body;
+        const { email, password, nombre, apellido, telefono, direccion } = req.body;
 
         // Verificar si el usuario ya existe
         let usuario = await User.findOne({ email });
@@ -44,19 +44,15 @@ router.post('/registro', async (req, res) => {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
-        // Crear token de verificación
-        const tokenVerificacion = crypto.randomBytes(32).toString('hex');
-        const tokenExpiracion = Date.now() + 24 * 60 * 60 * 1000; // 24 horas
-
         // Crear nuevo usuario
         usuario = new User({
             email,
             password,
             nombre,
             apellido,
-            tokenVerificacion,
-            tokenExpiracion,
-            verificado: false
+            telefono,
+            direccion,
+            verificado: true // Temporalmente establecemos como verificado
         });
 
         // Encriptar contraseña
@@ -65,11 +61,21 @@ router.post('/registro', async (req, res) => {
 
         await usuario.save();
 
-        // Enviar correo de verificación
-        await enviarCorreoVerificacion(email, tokenVerificacion);
+        // Generar token
+        const token = jwt.sign(
+            { userId: usuario._id },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
 
         res.status(201).json({
-            mensaje: 'Usuario registrado. Por favor, verifica tu correo electrónico.'
+            token,
+            usuario: {
+                id: usuario._id,
+                nombre: usuario.nombre,
+                email: usuario.email,
+                role: usuario.role
+            }
         });
     } catch (error) {
         console.error('Error en registro:', error);
